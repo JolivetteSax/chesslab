@@ -18,6 +18,14 @@
   color: white;
 }
 
+.cell-light {
+  background-color:green;
+}
+
+.cell-dark {
+  background-color:saddlebrown;
+}
+
 .cell-selected {
   border: 1px solid yellow !important;
 }

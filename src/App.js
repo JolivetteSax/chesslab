@@ -1,11 +1,11 @@
 import React from 'react';
 import './App.css';
+import Piece from './components/Piece';
 
 export default class App extends React.Component {
   constructor(){
     super();
     this.select = this.select.bind(this);
-    this.boardRefs = {};
     this.state = {
       selected: null,
       rows : [ 
@@ -32,30 +32,22 @@ export default class App extends React.Component {
   }
 
   select(ev){
-    let value = ev.currentTarget.innerHTML;
-    value = value.replace(/ /g, '');
+    let rows = this.state.rows;
 
     let id = ev.currentTarget.id;
+    let [row2, col2] = this.decodePosition(id);
+    let target = rows[row2][col2];
 
     if(id === this.state.selected){
       this.setState({selected: null});
     }
     else if(this.state.selected){
       let [row1, col1] = this.decodePosition(this.state.selected);
-      let [row2, col2] = this.decodePosition(id);
-
-      //console.log('From: ' + row1 + '/' + col1); 
-      //console.log('  to: ' + row2 + '/' + col2); 
-
-      let rows = this.state.rows;
 
       let initiator = rows[row1][col1];
 
-      //console.log('Initator: ' + initiator);
-      //console.log('target: ' + value);
-
-      if(value !== '-'){
-        let targetColor = value[0];
+      if(target !== '-'){
+        let targetColor = target[0];
         let initiatorColor = initiator[0];
         if(targetColor === initiatorColor){ //invalid move
           return;
@@ -67,7 +59,7 @@ export default class App extends React.Component {
 
       this.setState({selected: null, rows});
     }
-    else if(value === '-'){
+    else if(target === '-'){
       return;
     }
     else {
@@ -82,11 +74,24 @@ export default class App extends React.Component {
       let classList = 'cell';
 
       if(id === this.state.selected){
-        classList = 'cell cell-selected';
+        classList += ' cell-selected';
+      }
+      let sqNum = (props.rownum * 7 ) + props.colnum;
+      if((sqNum % 2) === 0){
+        classList += ' cell-dark';
+      }
+      else{
+        classList += ' cell-light';
       }
 
       return (
-        <div className={classList} id={id} ref={ref => this.boardRefs[id] = ref} onClick={this.select}>{props.col}</div>
+        <div 
+           className={classList} 
+           id={id} 
+           onClick={this.select}
+        >
+          <Piece code={props.piece}/>
+        </div>
       );
     };
 
@@ -96,7 +101,7 @@ export default class App extends React.Component {
           {this.state.rows.map((row, rownum) =>
             <div key={"row_" + rownum}>
               {row.map((col, colnum) => 
-                <Cell key={"col_" + colnum} rownum={rownum} colnum={colnum} col={col}/>
+                <Cell key={"col_" + colnum} rownum={rownum} colnum={colnum} piece={col}/>
               )}
             </div>
           )}
