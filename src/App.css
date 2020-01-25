@@ -1,5 +1,8 @@
 .App {
+  background-color: #282c34;
+  min-height: 100vh;
   text-align: center;
+  color: white;
 }
 
 .App-logo {
@@ -7,15 +10,19 @@
   pointer-events: none;
 }
 
-.App-body {
-  background-color: #282c34;
+.App-sidebar {
+  color: black;
+  background-color:white;
+  float:left;
   min-height: 100vh;
+  width:200px;
+}
+.App-body {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: white;
 }
 
 .cell-light {
@@ -27,9 +34,12 @@
 }
 
 .cell-selected {
+  background-color:brown;
   border: 1px solid yellow !important;
 }
-
+.cell-info {
+  cursor: default !important;
+}
 .cell {
   height: 70px;
   width: 70px;

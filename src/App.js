@@ -5,9 +5,11 @@ import Piece from './components/Piece';
 export default class App extends React.Component {
   constructor(){
     super();
+    this.columns = [ '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     this.select = this.select.bind(this);
     this.state = {
       selected: null,
+      history: [],
       rows : [ 
         ['BR' , 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
         ['BP' , 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
@@ -33,7 +35,7 @@ export default class App extends React.Component {
 
   select(ev){
     let rows = this.state.rows;
-
+    let history = this.state.history;
     let id = ev.currentTarget.id;
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
@@ -53,11 +55,12 @@ export default class App extends React.Component {
           return;
         }
       }
-
+      let move = this.state.selected + " -> " + id;
+      history.push(move);
       rows[row2][col2] = rows[row1][col1];
       rows[row1][col1] = '-';
 
-      this.setState({selected: null, rows});
+      this.setState({selected: null, rows, history});
     }
     else if(target === '-'){
       return;
@@ -97,11 +100,34 @@ export default class App extends React.Component {
 
     return (
       <div className="App">
+        <div className="App-sidebar">
+          History:
+          <div>
+            {this.state.history.map((move, moveno) =>
+              <div key={"move_" + moveno}>
+                {moveno + 1}. &nbsp;
+                {move}
+                <hr/>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="App-body">
+          <div>
+            {this.columns.map((label) =>
+              <div className="cell cell-info">{label}</div>
+            )}
+          </div>
           {this.state.rows.map((row, rownum) =>
             <div key={"row_" + rownum}>
+              <div className="cell cell-info">{8-rownum}</div>
               {row.map((col, colnum) => 
-                <Cell key={"col_" + colnum} rownum={rownum} colnum={colnum} piece={col}/>
+                <Cell
+                  key={"r_" + rownum + "c_" + colnum}
+                  rownum={rownum}
+                  colnum={colnum}
+                  piece={col}
+                />
               )}
             </div>
           )}
