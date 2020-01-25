@@ -9,8 +9,14 @@ export default class App extends React.Component {
     this.state = {
       selected: null,
       rows : [ 
-        ['WQ' , '-'],
-        ['BK' , '-']
+        ['BR' , 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
+        ['BP' , 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
+        ['-' , '-', '-', '-', '-', '-', '-', '-'],
+        ['-' , '-', '-', '-', '-', '-', '-', '-'],
+        ['-' , '-', '-', '-', '-', '-', '-', '-'],
+        ['-' , '-', '-', '-', '-', '-', '-', '-'],
+        ['WP' , 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
+        ['WR' , 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
       ]
     };
   }
@@ -20,16 +26,11 @@ export default class App extends React.Component {
     value = value.replace(/ /g, '');
 
     let id = ev.currentTarget.id;
-    let reactRef = this.boardRefs[id];
 
     if(id === this.state.selected){
-      reactRef.classList.remove('cell-selected');
       this.setState({selected: null});
     }
     else if(this.state.selected){
-      let prevRef = this.boardRefs[this.state.selected];
-      prevRef.classList.remove('cell-selected');
-
       let row1 = this.state.selected.charCodeAt(0) - 65;
       let col1 = this.state.selected.charCodeAt(1) - 49;
       
@@ -58,8 +59,7 @@ export default class App extends React.Component {
       return;
     }
     else {
-      reactRef.classList.add('cell-selected');
-      this.setState({selected: id});;
+      this.setState({selected: id});
     }
   }
 
@@ -67,8 +67,14 @@ export default class App extends React.Component {
 
     const Cell = (props) => {
       let id = String.fromCharCode(65 + props.rownum) + String.fromCharCode(49 + props.colnum);
+      let classList = 'cell';
+
+      if(id === this.state.selected){
+        classList = 'cell cell-selected';
+      }
+
       return (
-        <div className='cell' id={id} ref={ref => this.boardRefs[id] = ref} onClick={this.select}>{props.col}</div>
+        <div className={classList} id={id} ref={ref => this.boardRefs[id] = ref} onClick={this.select}>{props.col}</div>
       );
     };
 
@@ -76,12 +82,13 @@ export default class App extends React.Component {
       <div className="App">
         <div className="App-body">
           {this.state.rows.map((row, rownum) =>
-            <div>
+            <div key={"row_" + rownum}>
               {row.map((col, colnum) => 
-                <Cell rownum={rownum} colnum={colnum} col={col}/>
+                <Cell key={"col_" + colnum} rownum={rownum} colnum={colnum} col={col}/>
               )}
             </div>
           )}
+
           <div style={{margin:20}}>&nbsp;</div>
 
           {!this.state.selected &&
