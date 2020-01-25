@@ -21,6 +21,16 @@ export default class App extends React.Component {
     };
   }
 
+  getId(row, col){
+    return String.fromCharCode(65 + col) + String.fromCharCode((7-row) + 49) ;
+  }
+
+  decodePosition(id){
+    let col = id.charCodeAt(0) - 65;
+    let row = 7-(id.charCodeAt(1) - 49);
+    return [row, col];
+  }
+
   select(ev){
     let value = ev.currentTarget.innerHTML;
     value = value.replace(/ /g, '');
@@ -31,17 +41,19 @@ export default class App extends React.Component {
       this.setState({selected: null});
     }
     else if(this.state.selected){
-      let row1 = this.state.selected.charCodeAt(0) - 65;
-      let col1 = this.state.selected.charCodeAt(1) - 49;
-      
-      let row2 = id.charCodeAt(0) - 65;
-      let col2 = id.charCodeAt(1) - 49;
-      
+      let [row1, col1] = this.decodePosition(this.state.selected);
+      let [row2, col2] = this.decodePosition(id);
+
+      //console.log('From: ' + row1 + '/' + col1); 
+      //console.log('  to: ' + row2 + '/' + col2); 
+
       let rows = this.state.rows;
 
       let initiator = rows[row1][col1];
-      console.log('Initator: ' + initiator);
-      console.log('target: ' + value);
+
+      //console.log('Initator: ' + initiator);
+      //console.log('target: ' + value);
+
       if(value !== '-'){
         let targetColor = value[0];
         let initiatorColor = initiator[0];
@@ -63,10 +75,10 @@ export default class App extends React.Component {
     }
   }
 
-  render() {
 
+  render() {
     const Cell = (props) => {
-      let id = String.fromCharCode(65 + props.rownum) + String.fromCharCode(49 + props.colnum);
+      let id = this.getId(props.rownum, props.colnum);
       let classList = 'cell';
 
       if(id === this.state.selected){
