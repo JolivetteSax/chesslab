@@ -17,6 +17,8 @@ export default class App extends React.Component {
 
   select(ev){
     let value = ev.currentTarget.innerHTML;
+    value = value.replace(/ /g, '');
+
     let id = ev.currentTarget.id;
     let reactRef = this.boardRefs[id];
 
@@ -36,54 +38,62 @@ export default class App extends React.Component {
       
       let rows = this.state.rows;
 
-      rows[row2][col2] = rows[row1][col1]
-      rows[row1][col1] = value;
+      let initiator = rows[row1][col1];
+      console.log('Initator: ' + initiator);
+      console.log('target: ' + value);
+      if(value !== '-'){
+        let targetColor = value[0];
+        let initiatorColor = initiator[0];
+        if(targetColor === initiatorColor){ //invalid move
+          return;
+        }
+      }
+
+      rows[row2][col2] = rows[row1][col1];
+      rows[row1][col1] = '-';
 
       this.setState({selected: null, rows});
     }
-    else{
+    else if(value === '-'){
+      return;
+    }
+    else {
       reactRef.classList.add('cell-selected');
       this.setState({selected: id});;
     }
   }
 
   render() {
+
+    const Cell = (props) => {
+      let id = String.fromCharCode(65 + props.rownum) + String.fromCharCode(49 + props.colnum);
+      return (
+        <div className='cell' id={id} ref={ref => this.boardRefs[id] = ref} onClick={this.select}>{props.col}</div>
+      );
+    };
+
     return (
       <div className="App">
         <div className="App-body">
-          <div>
-            <div className="cell" id="A1" ref={ref => this.boardRefs.A1 = ref} onClick={this.select}> 
-              {this.state.rows[0][0]} 
+          {this.state.rows.map((row, rownum) =>
+            <div>
+              {row.map((col, colnum) => 
+                <Cell rownum={rownum} colnum={colnum} col={col}/>
+              )}
             </div>
+          )}
+          <div style={{margin:20}}>&nbsp;</div>
 
-            <div 
-              className="cell" 
-              id="A2" 
-              ref={ref => this.boardRefs.A2 = ref} 
-              onClick={this.select}> 
-
-              {this.state.rows[0][1]} 
-
+          {!this.state.selected &&
+            <div> - </div>
+          }
+          {this.state.selected &&
+            <div>
+              {this.state.selected} -> 
             </div>
-          </div>
-          <div>
-            <div className="cell" id="B1" ref={ref => this.boardRefs.B1 = ref} onClick={this.select}> {this.state.rows[1][0]} </div>
-            <div className="cell" id="B2" ref={ref => this.boardRefs.B2 = ref} onClick={this.select}> {this.state.rows[1][1]} </div>
-          </div>
-
-        <div style={{margin:20}}>&nbsp;</div>
-        {!this.state.selected &&
-          <div> - </div>
-        }
-        {this.state.selected &&
-          <div>
-            {this.state.selected} -> 
-          </div>
-        }
+          }
  
         </div>
-
-
       </div>
     );
   }

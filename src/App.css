@@ -23,8 +23,11 @@
 }
 
 .cell {
+  height: 70px;
   width: 70px;
   float:left;
+  align-items: center;
+  justify-content: center;
   border: 1px solid white;
   cursor: pointer;
 }
