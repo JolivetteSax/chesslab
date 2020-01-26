@@ -1,16 +1,14 @@
 import React from 'react';
 import './App.css';
 import Piece from './components/Piece';
+import lo from 'lodash';
 
 export default class App extends React.Component {
   constructor(){
     super();
-    this.columns = [ '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     this.select = this.select.bind(this);
-    this.state = {
-      selected: null,
-      history: [],
-      rows : [ 
+    this.playHistory = this.playHistory.bind(this);
+    this.startingBoard = [
         ['BR' , 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
         ['BP' , 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
         ['-' , '-', '-', '-', '-', '-', '-', '-'],
@@ -19,8 +17,23 @@ export default class App extends React.Component {
         ['-' , '-', '-', '-', '-', '-', '-', '-'],
         ['WP' , 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
         ['WR' , 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
-      ]
+    ];
+
+    this.state = {
+      selected: null,
+      history: [],
+      rows : lo.cloneDeep(this.startingBoard),
     };
+  }
+
+  playHistory(ev){
+    let mark = ev.currentTarget.attributes.mark.value;
+    let rows = lo.cloneDeep(this.startingBoard);
+    for(let i = 0; i <= mark; i++){
+      let move = this.state.history[i];
+      rows = this.executeMove(rows, move.from, move.to)  
+    }
+    this.setState({rows});
   }
 
   getId(row, col){
@@ -31,6 +44,16 @@ export default class App extends React.Component {
     let col = id.charCodeAt(0) - 65;
     let row = 7-(id.charCodeAt(1) - 49);
     return [row, col];
+  }
+
+  executeMove(rows, from, to){
+    let [row1, col1] = this.decodePosition(from);
+    let [row2, col2] = this.decodePosition(to);
+
+    rows[row2][col2] = rows[row1][col1];
+    rows[row1][col1] = '-';
+
+    return rows;
   }
 
   select(ev){
@@ -55,11 +78,10 @@ export default class App extends React.Component {
           return;
         }
       }
-      let move = this.state.selected + " -> " + id;
-      history.push(move);
-      rows[row2][col2] = rows[row1][col1];
-      rows[row1][col1] = '-';
 
+      let move = { from: this.state.selected, to: id};
+      history.push(move);
+      rows = this.executeMove(rows, move.from, move.to);
       this.setState({selected: null, rows, history});
     }
     else if(target === '-'){
@@ -98,15 +120,31 @@ export default class App extends React.Component {
       );
     };
 
+    const columns = [ '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
     return (
       <div className="App">
         <div className="App-sidebar">
           History:
           <div>
+              <hr/>
+              <div
+                mark={-1}
+                onClick={this.playHistory}
+              >
+                -. &nbsp;
+                open
+                <hr/>
+              </div>
+ 
             {this.state.history.map((move, moveno) =>
-              <div key={"move_" + moveno}>
+              <div
+                key={"move_" + moveno}
+                mark={moveno}
+                onClick={this.playHistory}
+              >
                 {moveno + 1}. &nbsp;
-                {move}
+                {move.from} -> {move.to}
                 <hr/>
               </div>
             )}
@@ -114,7 +152,7 @@ export default class App extends React.Component {
         </div>
         <div className="App-body">
           <div>
-            {this.columns.map((label) =>
+            {columns.map((label) =>
               <div className="cell cell-info">{label}</div>
             )}
           </div>
