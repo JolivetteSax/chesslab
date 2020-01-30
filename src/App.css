@@ -33,6 +33,10 @@
   background-color:saddlebrown;
 }
 
+.cell-target {
+  background-color:blue;
+}
+
 .cell-selected {
   background-color:brown;
   border: 1px solid yellow !important;

@@ -2,12 +2,14 @@ import React from 'react';
 import './App.css';
 import Piece from './components/Piece';
 import lo from 'lodash';
+import chess from './lib/chess';
 
 export default class App extends React.Component {
   constructor(){
     super();
     this.select = this.select.bind(this);
     this.playHistory = this.playHistory.bind(this);
+    this.lib = new chess();
     this.startingBoard = [
         ['BR' , 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
         ['BP' , 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
@@ -23,6 +25,7 @@ export default class App extends React.Component {
       selected: null,
       history: [],
       rows : lo.cloneDeep(this.startingBoard),
+      moves: []
     };
   }
 
@@ -64,7 +67,7 @@ export default class App extends React.Component {
     let target = rows[row2][col2];
 
     if(id === this.state.selected){
-      this.setState({selected: null});
+      this.setState({selected: null, moves: []});
     }
     else if(this.state.selected){
       let [row1, col1] = this.decodePosition(this.state.selected);
@@ -82,13 +85,14 @@ export default class App extends React.Component {
       let move = { from: this.state.selected, to: id};
       history.push(move);
       rows = this.executeMove(rows, move.from, move.to);
-      this.setState({selected: null, rows, history});
+      this.setState({selected: null, rows, moves: [], history});
     }
     else if(target === '-'){
       return;
     }
     else {
-      this.setState({selected: id});
+      let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
+      this.setState({selected: id, moves});
     }
   }
 
@@ -108,7 +112,11 @@ export default class App extends React.Component {
       else{
         classList += ' cell-light';
       }
-
+      for(let move of this.state.moves){
+        if(move[0] === props.rownum && move[1] === props.colnum){
+          classList += ' cell-target';
+        }
+      }
       return (
         <div 
            className={classList} 
