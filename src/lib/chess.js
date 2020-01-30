@@ -1,6 +1,9 @@
 
 export default class chess {
   getPawnMoveList(rows, piece, x, y){
+    // The pawn move doesn't need to check for falling off the board
+    // because the pawn should transform into a queen at the end row
+    // TODO: need to add en-passant
     const colorMultiple = (piece[0] === 'B' ? 1 : -1);
     const moves = [];
     let movex = x;
@@ -95,8 +98,10 @@ export default class chess {
 
   getKnightMoveList(rows, piece, x, y){
     const moves = [];
-    let movex = x;
-    let movey = y;
+    let movex, movey;
+
+    movex = x;
+    movey = y;
     movex = movex -2;
     if(movex > -1){
       if(movey - 1 > -1){
@@ -106,8 +111,80 @@ export default class chess {
           moves.push([movex, movey]);
         }
       }
+      movey = y
+      if(movey + 1 < 8){
+        movey++;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+
     }
-    // TODO: This is getting kinda tedious tonight..
+
+    movex = x;
+    movey = y;
+    movex = movex + 2;
+    if(movex < 8){
+      if(movey - 1 > -1){
+        movey--;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      movey = y
+      if(movey + 1 < 8){
+        movey++;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+    }
+
+    movex = x;
+    movey = y;
+    movex++;
+    if(movex < 8){
+      if(movey - 2 > -1){
+        movey -= 2;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      movey = y
+      if(movey + 2 < 8){
+        movey += 2;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+    }
+
+    movex = x;
+    movey = y;
+    movex--;
+    if(movex > -1){
+      if(movey - 2 > -1){
+        movey -= 2;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      movey = y
+      if(movey + 2 < 8){
+        movey += 2;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+    }
+ 
     return moves; 
   }
 
@@ -167,6 +244,86 @@ export default class chess {
     return moves;
   }
 
+  getKingMoveList(rows, piece, x, y){
+    const moves = [];
+    let movex, movey;
+
+    movex = x;
+    movey = y;
+    movex = movex - 1;
+    if(movex > -1){
+      let target = rows[movex][movey];
+      if(target === '-' || target[0] !== piece[0]){
+        moves.push([movex, movey]);
+      }
+ 
+      if(movey - 1 > -1){
+        movey--;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      movey = y
+      if(movey + 1 < 8){
+        movey++;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+
+    }
+
+    movex = x;
+    movey = y;
+    movex = movex + 1;
+    if(movex < 8){
+      let target = rows[movex][movey];
+      if(target === '-' || target[0] !== piece[0]){
+        moves.push([movex, movey]);
+      }
+ 
+      if(movey - 1 > -1){
+        movey--;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      movey = y
+      if(movey + 1 < 8){
+        movey++;
+        let target = rows[movex][movey];
+        if(target === '-' || target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+    }
+
+    movex = x;
+    movey = y;
+    if(movey - 1 > -1){
+      movey -= 1;
+      let target = rows[movex][movey];
+      if(target === '-' || target[0] !== piece[0]){
+        moves.push([movex, movey]);
+      }
+    }
+    movey = y
+    if(movey + 1 < 8){
+      movey += 1;
+      let target = rows[movex][movey];
+      if(target === '-' || target[0] !== piece[0]){
+        moves.push([movex, movey]);
+      }
+    }
+    // TODO need to add castle on kingside and queenside 
+    // in order to offer this feature need to detect "check" threat
+    return moves; 
+  }
+
+
   getMoveList(rows, piece, x, y){
     let moves;
     switch(piece[1]){
@@ -185,6 +342,9 @@ export default class chess {
       case 'Q':
         moves = this.getRookMoveList(rows, piece, x, y);
         moves = moves.concat(this.getBishopMoveList(rows, piece, x, y));
+        break;
+      case 'K':
+        moves = this.getKingMoveList(rows, piece, x, y);
         break;
       default:
         moves = [];
