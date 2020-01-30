@@ -11,14 +11,14 @@ export default class App extends React.Component {
     this.playHistory = this.playHistory.bind(this);
     this.lib = new chess();
     this.startingBoard = [
-        ['BR' , 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
-        ['BP' , 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
-        ['-' , '-', '-', '-', '-', '-', '-', '-'],
-        ['-' , '-', '-', '-', '-', '-', '-', '-'],
-        ['-' , '-', '-', '-', '-', '-', '-', '-'],
-        ['-' , '-', '-', '-', '-', '-', '-', '-'],
-        ['WP' , 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
-        ['WR' , 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
+        ['BR', 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
+        ['BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
+        ['WR', 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
     ];
 
     this.state = {
@@ -27,18 +27,21 @@ export default class App extends React.Component {
       rows : lo.cloneDeep(this.startingBoard),
       moves: [],
       threats: [],
+      whiteMove: true,
     };
   }
 
   playHistory(ev){
     let mark = ev.currentTarget.attributes.mark.value;
+    let whiteMove = true;
     let rows = lo.cloneDeep(this.startingBoard);
     for(let i = 0; i <= mark; i++){
       let move = this.state.history[i];
-      rows = this.executeMove(rows, move.from, move.to)  
+      rows = this.executeMove(rows, move.from, move.to);
+      whiteMove = !whiteMove;
     }
     const threats = this.lib.getThreatMatrix(rows);
-    this.setState({rows, threats, selected:null, moves: []});
+    this.setState({rows, threats, selected:null, moves: [], whiteMove});
   }
 
   getId(row, col){
@@ -84,18 +87,34 @@ export default class App extends React.Component {
         }
       }
 
+      const moveList = this.lib.getMoveList(rows, initiator, row1, col1);
+      let found = false;
+      for(const move of moveList){
+        if(move[0] === row2 && move[1] === col2){
+          found = true;
+          break;
+        }
+      }
+      if(!found){
+        return;
+      }
+
       let move = { from: this.state.selected, to: id};
       history.push(move);
       rows = this.executeMove(rows, move.from, move.to);
       const threats = this.lib.getThreatMatrix(rows);
-      this.setState({selected: null, rows, moves: [], threats, history});
+      const whiteMove = !this.state.whiteMove;
+      this.setState({selected: null, rows, moves: [], threats, history, whiteMove});
     }
     else if(target === '-'){
       return;
     }
     else {
-      let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
-      this.setState({selected: id, moves});
+      if((this.state.whiteMove && target[0] === 'W')
+        || ((!this.state.whiteMove) && target[0] === 'B')){
+        let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
+        this.setState({selected: id, moves});
+      }
     }
   }
 
@@ -199,6 +218,12 @@ export default class App extends React.Component {
             <div>
               {this.state.selected} -> 
             </div>
+          }
+          {this.state.whiteMove &&
+            <div> white to move </div>
+          }
+          {!this.state.whiteMove &&
+            <div> black to move </div>
           }
  
         </div>
