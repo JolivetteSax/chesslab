@@ -11,7 +11,7 @@ export default class App extends React.Component {
     this.playHistory = this.playHistory.bind(this);
     this.lib = new chess();
     this.startingBoard = [
-        ['BR', 'BN', 'BB', 'BK', 'BQ', 'BB', 'BN', 'BR'],
+        ['BR', 'BN', 'BB', 'BQ', 'BK', 'BB', 'BN', 'BR'],
         ['BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
         ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
         ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
@@ -28,6 +28,7 @@ export default class App extends React.Component {
       moves: [],
       threats: [],
       whiteMove: true,
+      check: false,
     };
   }
 
@@ -87,7 +88,8 @@ export default class App extends React.Component {
         }
       }
 
-      const moveList = this.lib.getMoveList(rows, initiator, row1, col1);
+      let moveList = this.lib.getMoveList(rows, initiator, row1, col1);
+      moveList = this.lib.limitValidMoves(rows, initiator, row1, col1, moveList);
       let found = false;
       for(const move of moveList){
         if(move[0] === row2 && move[1] === col2){
@@ -104,7 +106,8 @@ export default class App extends React.Component {
       rows = this.executeMove(rows, move.from, move.to);
       const threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
-      this.setState({selected: null, rows, moves: [], threats, history, whiteMove});
+      const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+      this.setState({selected: null, rows, moves: [], threats, history, whiteMove, check});
     }
     else if(target === '-'){
       return;
@@ -113,6 +116,7 @@ export default class App extends React.Component {
       if((this.state.whiteMove && target[0] === 'W')
         || ((!this.state.whiteMove) && target[0] === 'B')){
         let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
+        moves = this.lib.limitValidMoves(this.state.rows, target, row2, col2, moves);
         this.setState({selected: id, moves});
       }
     }
@@ -219,12 +223,13 @@ export default class App extends React.Component {
               {this.state.selected} -> 
             </div>
           }
-          {this.state.whiteMove &&
-            <div> white to move </div>
-          }
-          {!this.state.whiteMove &&
-            <div> black to move </div>
-          }
+
+          <div> 
+            {this.state.whiteMove? "white": "black"} to move 
+            {this.state.check &&
+              <span> - check</span>
+            }
+          </div>
  
         </div>
       </div>

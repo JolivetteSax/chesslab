@@ -1,3 +1,4 @@
+import lo from 'lodash';
 
 export default class chess {
   getPawnMoveList(rows, piece, x, y){
@@ -351,6 +352,43 @@ export default class chess {
         break;
     }
     return moves;
+  }
+
+  // This function cannot be part of "getMoveList" due to a paradox
+  // https://www.chess.com/forum/view/general/why-cant-a-king-take-a-pawn-or-other-piece-if-that-piece-cannot-legally-move
+  // The paradox is resolved by the fact that "capturing" the king can be
+  // "invalid" in that it leaves the other player open to capture, because theoretically
+  // the first king will have lost. Otherwise the stack overflows from the recursion.
+  // This function therefore MUST be called in conjunction with getMoveList externally
+  limitValidMoves(rows, piece, x, y, moves){
+    const validMoves = [];
+    for(const move of moves){
+      const testRows = lo.cloneDeep(rows);
+      testRows[move[0]][move[1]] = piece;
+      testRows[x][y] = '-';
+      if(!this.isKingCheck(piece[0], testRows)){
+        validMoves.push(move);
+      }
+    }
+    return validMoves;
+  }
+
+  isKingCheck(color, rows){
+    const threats = this.getThreatMatrix(rows);
+    for(let x=0;x<8;x++){
+      for(let y=0;y<8;y++){
+        if(rows[x][y][0] === color
+            && rows[x][y][1] === 'K'){
+          if(threats[x][y] > 0){
+            return true;
+          }
+          else{
+            return false;
+          }
+        }
+      }
+    }
+    return false; // technically, could be a pathological setup
   }
 
   getThreatMatrix(rows){
