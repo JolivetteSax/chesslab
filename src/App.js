@@ -25,7 +25,8 @@ export default class App extends React.Component {
       selected: null,
       history: [],
       rows : lo.cloneDeep(this.startingBoard),
-      moves: []
+      moves: [],
+      threats: [],
     };
   }
 
@@ -36,7 +37,8 @@ export default class App extends React.Component {
       let move = this.state.history[i];
       rows = this.executeMove(rows, move.from, move.to)  
     }
-    this.setState({rows});
+    const threats = this.lib.getThreatMatrix(rows);
+    this.setState({rows, threats, selected:null, moves: []});
   }
 
   getId(row, col){
@@ -85,7 +87,8 @@ export default class App extends React.Component {
       let move = { from: this.state.selected, to: id};
       history.push(move);
       rows = this.executeMove(rows, move.from, move.to);
-      this.setState({selected: null, rows, moves: [], history});
+      const threats = this.lib.getThreatMatrix(rows);
+      this.setState({selected: null, rows, moves: [], threats, history});
     }
     else if(target === '-'){
       return;
@@ -117,6 +120,12 @@ export default class App extends React.Component {
           classList += ' cell-target';
         }
       }
+      let threatCount = 0;
+      if(props.piece !== '-' && this.state.threats[props.rownum]){
+        if(this.state.threats[props.rownum][props.colnum]){
+          threatCount = this.state.threats[props.rownum][props.colnum];
+        }
+      }
       return (
         <div 
            className={classList} 
@@ -124,6 +133,9 @@ export default class App extends React.Component {
            onClick={this.select}
         >
           <Piece code={props.piece}/>
+          {(threatCount>0) &&
+            <div>{threatCount}</div>
+          }
         </div>
       );
     };

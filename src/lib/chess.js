@@ -354,6 +354,26 @@ export default class chess {
   }
 
   getThreatMatrix(rows){
+    const threats = [];
+    let allMoves = [];
+    for(let x=0;x<8;x++){
+      const threatRow = [];
+      for(let y=0;y<8;y++){
+        threatRow.push(0);
+        const piece = rows[x][y];
+        if(piece !== '-'){
+          const moves = this.getMoveList(rows, piece, x, y);
+          allMoves = allMoves.concat(moves);
+        }
+      }
+      threats.push(threatRow);
+    }
+
+    for(const move of allMoves){
+      threats[move[0]][move[1]]++;
+    }
+
+    return threats;
   }
 
 }
