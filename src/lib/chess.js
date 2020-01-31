@@ -2,20 +2,20 @@ import lo from 'lodash';
 
 export default class chess {
   getPawnMoveList(rows, piece, x, y){
-    // The pawn move doesn't need to check for falling off the board
-    // because the pawn should transform into a queen at the end row
     // TODO: need to add en-passant
     const colorMultiple = (piece[0] === 'B' ? 1 : -1);
     const moves = [];
     let movex = x;
     let movey = y;
     movex = movex + (colorMultiple);
-    if(rows[movex][movey] === '-'){
-       moves.push([movex,movey]);
+    if(movex > -1 && movex < 8){
+      if(rows[movex][movey] === '-'){
+        moves.push([movex,movey]);
+      }
     }
     if(x === 1 || x === 6){
       movex = movex + (colorMultiple);
-      if(movex >= 0 && movex <= 7){
+      if(movex > -1 && movex < 8){
         if(rows[movex][movey] === '-'){
           moves.push([movex,movey]);
         }
@@ -24,6 +24,9 @@ export default class chess {
     movex = x;
     movey = y;
     movex = movex + (colorMultiple);
+    if(movex < 0 || movex > 7){
+      return moves;
+    }
     if(movey + 1 <= 7){
       movey += 1;
       let target = rows[movex][movey];

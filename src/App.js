@@ -42,7 +42,8 @@ export default class App extends React.Component {
       whiteMove = !whiteMove;
     }
     const threats = this.lib.getThreatMatrix(rows);
-    this.setState({rows, threats, selected:null, moves: [], whiteMove});
+    const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+    this.setState({rows, threats, selected:null, moves: [], whiteMove, check});
   }
 
   getId(row, col){
@@ -61,7 +62,11 @@ export default class App extends React.Component {
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
-
+    if(rows[row2][col2][1] === 'P'
+       && (row2 === 0 || row2 === 7)){
+       const newPiece = rows[row2][col2][0] + 'Q'
+       rows[row2][col2] = newPiece;
+    }
     return rows;
   }
 
