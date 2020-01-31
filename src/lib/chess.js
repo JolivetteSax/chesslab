@@ -417,4 +417,20 @@ export default class chess {
     return threats;
   }
 
+  isCheckMate(color, rows){
+    for(let x=0;x<8;x++){
+      for(let y=0;y<8;y++){
+        const piece = rows[x][y];
+        if(piece[0] === color){
+          let moves = this.getMoveList(rows, piece, x, y);
+          moves = this.limitValidMoves(rows, piece, x, y, moves);
+          if(moves.length > 0){
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
 }

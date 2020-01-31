@@ -29,6 +29,7 @@ export default class App extends React.Component {
       threats: [],
       whiteMove: true,
       check: false,
+      mate: false,
     };
   }
 
@@ -43,7 +44,11 @@ export default class App extends React.Component {
     }
     const threats = this.lib.getThreatMatrix(rows);
     const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
-    this.setState({rows, threats, selected:null, moves: [], whiteMove, check});
+    let mate = false;
+    if(check){
+      mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
+    }
+    this.setState({rows, threats, selected:null, moves: [], whiteMove, check, mate});
   }
 
   getId(row, col){
@@ -112,7 +117,11 @@ export default class App extends React.Component {
       const threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
       const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
-      this.setState({selected: null, rows, moves: [], threats, history, whiteMove, check});
+      let mate = false;
+      if(check){
+        mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
+      }
+      this.setState({selected: null, rows, moves: [], threats, history, whiteMove, check, mate});
     }
     else if(target === '-'){
       return;
@@ -234,6 +243,10 @@ export default class App extends React.Component {
             {this.state.check &&
               <span> - check</span>
             }
+            {this.state.mate &&
+              <span>mate</span>
+            }
+ 
           </div>
  
         </div>
