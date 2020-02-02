@@ -9,6 +9,8 @@ export default class App extends React.Component {
     super();
     this.select = this.select.bind(this);
     this.playHistory = this.playHistory.bind(this);
+    this.renameAlt = this.renameAlt.bind(this);
+    this.reloadAlt = this.reloadAlt.bind(this);
     this.lib = new chess();
     this.startingBoard = [
         ['BR', 'BN', 'BB', 'BQ', 'BK', 'BB', 'BN', 'BR'],
@@ -24,23 +26,50 @@ export default class App extends React.Component {
     this.state = {
       selected: null,
       history: [],
+      alternatives: [],
       rows : lo.cloneDeep(this.startingBoard),
       moves: [],
       threats: [],
       whiteMove: true,
       check: false,
       mate: false,
+      currentMove: -1,
     };
+  }
+
+  reloadAlt(ev){
+    // TODO detect the current game and save as an alt
+    // display title?
+    let index = ev.currentTarget.attributes.index.value;
+    let alternatives = this.state.alternatives;
+    let alt = alternatives[index];
+    let history = lo.cloneDeep(alt.history);
+    let currentTarget = {attributes: {mark: {value: history.length-1}}};
+    // react won't setState immediately, so a callback must be used
+    this.setState({history}, () => {
+      this.playHistory({currentTarget});
+    });
+  }
+ 
+  renameAlt(ev){
+    let index = ev.currentTarget.attributes.index.value;
+    let alternatives = this.state.alternatives;
+    let alt = alternatives[index];
+    let newName = prompt('Enter new name: ', alt.name);
+    alt.name = newName;
+    this.setState({alternatives});
   }
 
   playHistory(ev){
     let mark = ev.currentTarget.attributes.mark.value;
     let whiteMove = true;
     let rows = lo.cloneDeep(this.startingBoard);
+    let currentMove = -1;
     for(let i = 0; i <= mark; i++){
       let move = this.state.history[i];
       rows = this.executeMove(rows, move.from, move.to);
       whiteMove = !whiteMove;
+      currentMove = i;
     }
     const threats = this.lib.getThreatMatrix(rows);
     const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
@@ -48,7 +77,8 @@ export default class App extends React.Component {
     if(check){
       mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
     }
-    this.setState({rows, threats, selected:null, moves: [], whiteMove, check, mate});
+
+    this.setState({rows, currentMove, threats, selected:null, moves: [], whiteMove, check, mate});
   }
 
   getId(row, col){
@@ -112,6 +142,14 @@ export default class App extends React.Component {
       }
 
       let move = { from: this.state.selected, to: id};
+      const alternatives = this.state.alternatives;
+      if(this.state.currentMove < (history.length -1)){
+        alternatives.push({
+          name: '' + history.length + 'moves',
+          history: lo.cloneDeep(history)
+        });
+        history = history.slice(0, this.state.currentMove + 1);
+      }
       history.push(move);
       rows = this.executeMove(rows, move.from, move.to);
       const threats = this.lib.getThreatMatrix(rows);
@@ -121,7 +159,8 @@ export default class App extends React.Component {
       if(check){
         mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
       }
-      this.setState({selected: null, rows, moves: [], threats, history, whiteMove, check, mate});
+      let currentMove = history.length - 1;
+      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives});
     }
     else if(target === '-'){
       return;
@@ -180,8 +219,27 @@ export default class App extends React.Component {
     const columns = [ '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
     return (
+      <div>
+        <div style={{marginLeft:200}}>
+            &nbsp;
+            {this.state.alternatives.length > 0 &&
+              <span>Alternative sequences: </span>
+            }
+            {this.state.alternatives.map((alt, altno) =>
+              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name} 
+                &#x5b;
+                <span className='App-link' index={altno} onClick={this.renameAlt}>&#x2699;</span>
+                |
+                <span className='App-link'  index={altno} onClick={this.reloadAlt}>&#x2023;</span>
+                &#x5d;
+                &gt; </b> &nbsp;
+              </span>
+            )}
+        </div>
+ 
       <div className="App">
-        <div className="App-sidebar">
+
+       <div className="App-sidebar">
           History:
           <div>
               <hr/>
@@ -191,6 +249,9 @@ export default class App extends React.Component {
               >
                 -. &nbsp;
                 open
+                {(-1 === this.state.currentMove) &&
+                  <span>&#10004;</span>
+                }
                 <hr/>
               </div>
  
@@ -201,7 +262,10 @@ export default class App extends React.Component {
                 onClick={this.playHistory}
               >
                 {moveno + 1}. &nbsp;
-                {move.from} -> {move.to}
+                {move.from} -> {move.to} &nbsp;
+                {(moveno === this.state.currentMove) &&
+                  <span>&#10004;</span>
+                }
                 <hr/>
               </div>
             )}
@@ -210,7 +274,7 @@ export default class App extends React.Component {
         <div className="App-body">
           <div>
             {columns.map((label) =>
-              <div className="cell cell-info">{label}</div>
+              <div key={'label_'+label} className="cell cell-info">{label}</div>
             )}
           </div>
           {this.state.rows.map((row, rownum) =>
@@ -250,6 +314,7 @@ export default class App extends React.Component {
           </div>
  
         </div>
+      </div>
       </div>
     );
   }
