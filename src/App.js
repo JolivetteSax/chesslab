@@ -11,6 +11,7 @@ export default class App extends React.Component {
     this.playHistory = this.playHistory.bind(this);
     this.renameAlt = this.renameAlt.bind(this);
     this.reloadAlt = this.reloadAlt.bind(this);
+    this.removeAlt = this.removeAlt.bind(this);
     this.lib = new chess();
     this.startingBoard = [
         ['BR', 'BN', 'BB', 'BQ', 'BK', 'BB', 'BN', 'BR'],
@@ -35,6 +36,13 @@ export default class App extends React.Component {
       mate: false,
       currentMove: -1,
     };
+  }
+
+  removeAlt(ev){
+    let index = ev.currentTarget.attributes.index.value;
+    let alternatives = this.state.alternatives;
+    alternatives.splice(index, 1);
+    this.setState({alternatives});
   }
 
   reloadAlt(ev){
@@ -231,6 +239,8 @@ export default class App extends React.Component {
                 <span className='App-link' index={altno} onClick={this.renameAlt}>&#x2699;</span>
                 |
                 <span className='App-link'  index={altno} onClick={this.reloadAlt}>&#x2023;</span>
+                |
+                <span className='App-link'  index={altno} onClick={this.removeAlt}>x</span>
                 &#x5d;
                 &gt; </b> &nbsp;
               </span>
