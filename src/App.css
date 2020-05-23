@@ -57,4 +57,13 @@
   cursor:pointer;
 }
 
+.Timer {
+  font-size: 2rem;
+  padding: .8rem;
+}
 
+.Timer button {
+  padding: .6rem;
+  width: 50%;
+  font-weight: bold;
+}

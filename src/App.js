@@ -1,11 +1,12 @@
-import React from 'react';
-import './App.css';
-import Piece from './components/Piece';
-import lo from 'lodash';
-import chess from './lib/chess';
+import React from "react";
+import "./App.css";
+import Piece from "./components/Piece";
+import lo from "lodash";
+import chess from "./lib/chess";
+import TimerComp from "./components/Timer";
 
 export default class App extends React.Component {
-  constructor(){
+  constructor() {
     super();
     this.select = this.select.bind(this);
     this.playHistory = this.playHistory.bind(this);
@@ -14,21 +15,21 @@ export default class App extends React.Component {
     this.removeAlt = this.removeAlt.bind(this);
     this.lib = new chess();
     this.startingBoard = [
-        ['BR', 'BN', 'BB', 'BQ', 'BK', 'BB', 'BN', 'BR'],
-        ['BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
-        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
-        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
-        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
-        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
-        ['WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
-        ['WR', 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
+      ["BR", "BN", "BB", "BQ", "BK", "BB", "BN", "BR"],
+      ["BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP"],
+      ["-", "-", "-", "-", "-", "-", "-", "-"],
+      ["-", "-", "-", "-", "-", "-", "-", "-"],
+      ["-", "-", "-", "-", "-", "-", "-", "-"],
+      ["-", "-", "-", "-", "-", "-", "-", "-"],
+      ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
+      ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"],
     ];
 
     this.state = {
       selected: null,
       history: [],
       alternatives: [],
-      rows : lo.cloneDeep(this.startingBoard),
+      rows: lo.cloneDeep(this.startingBoard),
       moves: [],
       threats: [],
       whiteMove: true,
@@ -38,123 +39,137 @@ export default class App extends React.Component {
     };
   }
 
-  removeAlt(ev){
+  removeAlt(ev) {
     let index = ev.currentTarget.attributes.index.value;
     let alternatives = this.state.alternatives;
     alternatives.splice(index, 1);
-    this.setState({alternatives});
+    this.setState({ alternatives });
   }
 
-  reloadAlt(ev){
+  reloadAlt(ev) {
     // TODO detect the current game and save as an alt
     // display title?
     let index = ev.currentTarget.attributes.index.value;
     let alternatives = this.state.alternatives;
     let alt = alternatives[index];
     let history = lo.cloneDeep(alt.history);
-    let currentTarget = {attributes: {mark: {value: history.length-1}}};
+    let currentTarget = { attributes: { mark: { value: history.length - 1 } } };
     // react won't setState immediately, so a callback must be used
-    this.setState({history}, () => {
-      this.playHistory({currentTarget});
+    this.setState({ history }, () => {
+      this.playHistory({ currentTarget });
     });
   }
- 
-  renameAlt(ev){
+
+  renameAlt(ev) {
     let index = ev.currentTarget.attributes.index.value;
     let alternatives = this.state.alternatives;
     let alt = alternatives[index];
-    let newName = prompt('Enter new name: ', alt.name);
+    let newName = prompt("Enter new name: ", alt.name);
     alt.name = newName;
-    this.setState({alternatives});
+    this.setState({ alternatives });
   }
 
-  playHistory(ev){
+  playHistory(ev) {
     let mark = ev.currentTarget.attributes.mark.value;
     let whiteMove = true;
     let rows = lo.cloneDeep(this.startingBoard);
     let currentMove = -1;
-    for(let i = 0; i <= mark; i++){
+    for (let i = 0; i <= mark; i++) {
       let move = this.state.history[i];
       rows = this.executeMove(rows, move.from, move.to);
       whiteMove = !whiteMove;
       currentMove = i;
     }
     const threats = this.lib.getThreatMatrix(rows);
-    const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+    const check = this.lib.isKingCheck(whiteMove ? "W" : "B", rows);
     let mate = false;
-    if(check){
-      mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
+    if (check) {
+      mate = this.lib.isCheckMate(whiteMove ? "W" : "B", rows);
     }
 
-    this.setState({rows, currentMove, threats, selected:null, moves: [], whiteMove, check, mate});
+    this.setState({
+      rows,
+      currentMove,
+      threats,
+      selected: null,
+      moves: [],
+      whiteMove,
+      check,
+      mate,
+    });
   }
 
-  getId(row, col){
-    return String.fromCharCode(65 + col) + String.fromCharCode((7-row) + 49) ;
+  getId(row, col) {
+    return String.fromCharCode(65 + col) + String.fromCharCode(7 - row + 49);
   }
 
-  decodePosition(id){
+  decodePosition(id) {
     let col = id.charCodeAt(0) - 65;
-    let row = 7-(id.charCodeAt(1) - 49);
+    let row = 7 - (id.charCodeAt(1) - 49);
     return [row, col];
   }
 
-  executeMove(rows, from, to){
+  executeMove(rows, from, to) {
     let [row1, col1] = this.decodePosition(from);
     let [row2, col2] = this.decodePosition(to);
 
     rows[row2][col2] = rows[row1][col1];
-    rows[row1][col1] = '-';
-    if(rows[row2][col2][1] === 'P'
-       && (row2 === 0 || row2 === 7)){
-       const newPiece = rows[row2][col2][0] + 'Q'
-       rows[row2][col2] = newPiece;
+    rows[row1][col1] = "-";
+    if (rows[row2][col2][1] === "P" && (row2 === 0 || row2 === 7)) {
+      const newPiece = rows[row2][col2][0] + "Q";
+      rows[row2][col2] = newPiece;
     }
     return rows;
   }
 
-  select(ev){
+  select(ev) {
     let rows = this.state.rows;
     let history = this.state.history;
     let id = ev.currentTarget.id;
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
 
-    if(id === this.state.selected){
-      this.setState({selected: null, moves: []});
-    }
-    else if(this.state.selected){
+    if (id === this.state.selected) {
+      this.setState({ selected: null, moves: [] });
+    } else if (this.state.selected) {
       let [row1, col1] = this.decodePosition(this.state.selected);
 
       let initiator = rows[row1][col1];
 
-      if(target !== '-'){
+      if (target !== "-") {
         let targetColor = target[0];
         let initiatorColor = initiator[0];
-        if(targetColor === initiatorColor){ //invalid move
+        if (targetColor === initiatorColor) {
+          //invalid move
           return;
         }
       }
 
       let moveList = this.lib.getMoveList(rows, initiator, row1, col1);
-      moveList = this.lib.limitValidMoves(rows, initiator, row1, col1, moveList);
+      moveList = this.lib.limitValidMoves(
+        rows,
+        initiator,
+        row1,
+        col1,
+        moveList
+      );
       let found = false;
-      for(const move of moveList){
-        if(move[0] === row2 && move[1] === col2){
+      for (const move of moveList) {
+        if (move[0] === row2 && move[1] === col2) {
           found = true;
           break;
         }
       }
-      if(!found){
+      if (!found) {
         return;
       }
 
-      let move = { from: this.state.selected, to: id};
+      let move = { from: this.state.selected, to: id };
       const alternatives = this.state.alternatives;
-      if(this.state.currentMove < (history.length -1)){
+      if (this.state.currentMove < history.length - 1) {
         alternatives.push({
-          name: '' + history.length + 'moves',
-          history: lo.cloneDeep(history)
+          name: "" + history.length + "moves",
+          history: lo.cloneDeep(history),
         });
         history = history.slice(0, this.state.currentMove + 1);
       }
@@ -162,171 +177,183 @@ export default class App extends React.Component {
       rows = this.executeMove(rows, move.from, move.to);
       const threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
-      const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+      const check = this.lib.isKingCheck(whiteMove ? "W" : "B", rows);
       let mate = false;
-      if(check){
-        mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
+      if (check) {
+        mate = this.lib.isCheckMate(whiteMove ? "W" : "B", rows);
       }
       let currentMove = history.length - 1;
-      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives});
-    }
-    else if(target === '-'){
+      this.setState({
+        selected: null,
+        currentMove,
+        rows,
+        moves: [],
+        threats,
+        history,
+        whiteMove,
+        check,
+        mate,
+        alternatives,
+      });
+    } else if (target === "-") {
       return;
-    }
-    else {
-      if((this.state.whiteMove && target[0] === 'W')
-        || ((!this.state.whiteMove) && target[0] === 'B')){
+    } else {
+      if (
+        (this.state.whiteMove && target[0] === "W") ||
+        (!this.state.whiteMove && target[0] === "B")
+      ) {
         let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
-        moves = this.lib.limitValidMoves(this.state.rows, target, row2, col2, moves);
-        this.setState({selected: id, moves});
+        moves = this.lib.limitValidMoves(
+          this.state.rows,
+          target,
+          row2,
+          col2,
+          moves
+        );
+        this.setState({ selected: id, moves });
       }
     }
   }
-
 
   render() {
     const Cell = (props) => {
       let id = this.getId(props.rownum, props.colnum);
-      let classList = 'cell';
+      let classList = "cell";
 
-      if(id === this.state.selected){
-        classList += ' cell-selected';
+      if (id === this.state.selected) {
+        classList += " cell-selected";
       }
-      let sqNum = (props.rownum * 7 ) + props.colnum;
-      if((sqNum % 2) === 0){
-        classList += ' cell-dark';
+      let sqNum = props.rownum * 7 + props.colnum;
+      if (sqNum % 2 === 0) {
+        classList += " cell-dark";
+      } else {
+        classList += " cell-light";
       }
-      else{
-        classList += ' cell-light';
-      }
-      for(let move of this.state.moves){
-        if(move[0] === props.rownum && move[1] === props.colnum){
-          classList += ' cell-target';
+      for (let move of this.state.moves) {
+        if (move[0] === props.rownum && move[1] === props.colnum) {
+          classList += " cell-target";
         }
       }
       let threatCount = 0;
-      if(props.piece !== '-' && this.state.threats[props.rownum]){
-        if(this.state.threats[props.rownum][props.colnum]){
+      if (props.piece !== "-" && this.state.threats[props.rownum]) {
+        if (this.state.threats[props.rownum][props.colnum]) {
           threatCount = this.state.threats[props.rownum][props.colnum];
         }
       }
       return (
-        <div 
-           className={classList} 
-           id={id} 
-           onClick={this.select}
-        >
-          <Piece code={props.piece}/>
-          {(threatCount>0) &&
-            <div>{threatCount}</div>
-          }
+        <div className={classList} id={id} onClick={this.select}>
+          <Piece code={props.piece} />
+          {threatCount > 0 && <div>{threatCount}</div>}
         </div>
       );
     };
 
-    const columns = [ '-', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const columns = ["-", "a", "b", "c", "d", "e", "f", "g", "h"];
 
     return (
       <div>
-        <div style={{marginLeft:200}}>
-            &nbsp;
-            {this.state.alternatives.length > 0 &&
-              <span>Alternative sequences: </span>
-            }
-            {this.state.alternatives.map((alt, altno) =>
-              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name} 
-                &#x5b;
-                <span className='App-link' index={altno} onClick={this.renameAlt}>&#x2699;</span>
-                |
-                <span className='App-link'  index={altno} onClick={this.reloadAlt}>&#x2023;</span>
-                |
-                <span className='App-link'  index={altno} onClick={this.removeAlt}>x</span>
-                &#x5d;
-                &gt; </b> &nbsp;
-              </span>
-            )}
-        </div>
- 
-      <div className="App">
-
-       <div className="App-sidebar">
-          History:
-          <div>
-              <hr/>
-              <div
-                mark={-1}
-                onClick={this.playHistory}
-              >
-                -. &nbsp;
-                open
-                {(-1 === this.state.currentMove) &&
-                  <span>&#10004;</span>
-                }
-                <hr/>
-              </div>
- 
-            {this.state.history.map((move, moveno) =>
-              <div
-                key={"move_" + moveno}
-                mark={moveno}
-                onClick={this.playHistory}
-              >
-                {moveno + 1}. &nbsp;
-                {move.from} -> {move.to} &nbsp;
-                {(moveno === this.state.currentMove) &&
-                  <span>&#10004;</span>
-                }
-                <hr/>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="App-body">
-          <div>
-            {columns.map((label) =>
-              <div key={'label_'+label} className="cell cell-info">{label}</div>
-            )}
-          </div>
-          {this.state.rows.map((row, rownum) =>
-            <div key={"row_" + rownum}>
-              <div className="cell cell-info">{8-rownum}</div>
-              {row.map((col, colnum) => 
-                <Cell
-                  key={"r_" + rownum + "c_" + colnum}
-                  rownum={rownum}
-                  colnum={colnum}
-                  piece={col}
-                />
-              )}
-            </div>
+        <div style={{ marginLeft: 200 }}>
+          &nbsp;
+          {this.state.alternatives.length > 0 && (
+            <span>Alternative sequences: </span>
           )}
-
-          <div style={{margin:20}}>&nbsp;</div>
-
-          {!this.state.selected &&
-            <div> - </div>
-          }
-          {this.state.selected &&
-            <div>
-              {this.state.selected} -> 
-            </div>
-          }
-
-          <div> 
-            {this.state.whiteMove? "white": "black"} to move 
-            {this.state.check &&
-              <span> - check</span>
-            }
-            {this.state.mate &&
-              <span>mate</span>
-            }
- 
-          </div>
- 
+          {this.state.alternatives.map((alt, altno) => (
+            <span key={"alt_" + altno}>
+              <b>
+                {" "}
+                &nbsp; &lt; {alt.name}
+                &#x5b;
+                <span
+                  className="App-link"
+                  index={altno}
+                  onClick={this.renameAlt}
+                >
+                  &#x2699;
+                </span>
+                |
+                <span
+                  className="App-link"
+                  index={altno}
+                  onClick={this.reloadAlt}
+                >
+                  &#x2023;
+                </span>
+                |
+                <span
+                  className="App-link"
+                  index={altno}
+                  onClick={this.removeAlt}
+                >
+                  x
+                </span>
+                &#x5d; &gt;{" "}
+              </b>{" "}
+              &nbsp;
+            </span>
+          ))}
         </div>
-      </div>
+
+        <div className="App">
+          <div className="App-sidebar">
+            <TimerComp />
+            History:
+            <div>
+              <hr />
+              <div mark={-1} onClick={this.playHistory}>
+                -. &nbsp; open
+                {-1 === this.state.currentMove && <span>&#10004;</span>}
+                <hr />
+              </div>
+
+              {this.state.history.map((move, moveno) => (
+                <div
+                  key={"move_" + moveno}
+                  mark={moveno}
+                  onClick={this.playHistory}
+                >
+                  {moveno + 1}. &nbsp;
+                  {move.from} -> {move.to} &nbsp;
+                  {moveno === this.state.currentMove && <span>&#10004;</span>}
+                  <hr />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="App-body">
+            <div>
+              {columns.map((label) => (
+                <div key={"label_" + label} className="cell cell-info">
+                  {label}
+                </div>
+              ))}
+            </div>
+            {this.state.rows.map((row, rownum) => (
+              <div key={"row_" + rownum}>
+                <div className="cell cell-info">{8 - rownum}</div>
+                {row.map((col, colnum) => (
+                  <Cell
+                    key={"r_" + rownum + "c_" + colnum}
+                    rownum={rownum}
+                    colnum={colnum}
+                    piece={col}
+                  />
+                ))}
+              </div>
+            ))}
+
+            <div style={{ margin: 20 }}>&nbsp;</div>
+
+            {!this.state.selected && <div> - </div>}
+            {this.state.selected && <div>{this.state.selected} -></div>}
+
+            <div>
+              {this.state.whiteMove ? "white" : "black"} to move
+              {this.state.check && <span> - check</span>}
+              {this.state.mate && <span>mate</span>}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 }
-
