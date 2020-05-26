@@ -34,7 +34,7 @@ export default class App extends React.Component {
       whiteMove: true,
       check: false,
       mate: false,
-      currentMove: -1,
+      currentMove: -1,  // move counter
     };
   }
 
@@ -58,7 +58,7 @@ export default class App extends React.Component {
       this.playHistory({currentTarget});
     });
   }
- 
+
   renameAlt(ev){
     let index = ev.currentTarget.attributes.index.value;
     let alternatives = this.state.alternatives;
@@ -120,6 +120,7 @@ export default class App extends React.Component {
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
 
+    // Selected piece is selected again, "putting a piece back"
     if(id === this.state.selected){
       this.setState({selected: null, moves: []});
     }
@@ -127,7 +128,7 @@ export default class App extends React.Component {
       let [row1, col1] = this.decodePosition(this.state.selected);
 
       let initiator = rows[row1][col1];
-
+      // if not empty space, validate that move isn't onto initiator color
       if(target !== '-'){
         let targetColor = target[0];
         let initiatorColor = initiator[0];
@@ -145,7 +146,7 @@ export default class App extends React.Component {
           break;
         }
       }
-      if(!found){
+      if(!found){ // move not on movelist
         return;
       }
 
@@ -173,7 +174,7 @@ export default class App extends React.Component {
     else if(target === '-'){
       return;
     }
-    else {
+    else { // Selecting a piece w/ .selected == null
       if((this.state.whiteMove && target[0] === 'W')
         || ((!this.state.whiteMove) && target[0] === 'B')){
         let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
@@ -211,9 +212,9 @@ export default class App extends React.Component {
         }
       }
       return (
-        <div 
-           className={classList} 
-           id={id} 
+        <div
+           className={classList}
+           id={id}
            onClick={this.select}
         >
           <Piece code={props.piece}/>
@@ -234,7 +235,7 @@ export default class App extends React.Component {
               <span>Alternative sequences: </span>
             }
             {this.state.alternatives.map((alt, altno) =>
-              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name} 
+              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name}
                 &#x5b;
                 <span className='App-link' index={altno} onClick={this.renameAlt}>&#x2699;</span>
                 |
@@ -246,7 +247,7 @@ export default class App extends React.Component {
               </span>
             )}
         </div>
- 
+
       <div className="App">
 
        <div className="App-sidebar">
@@ -264,7 +265,7 @@ export default class App extends React.Component {
                 }
                 <hr/>
               </div>
- 
+
             {this.state.history.map((move, moveno) =>
               <div
                 key={"move_" + moveno}
@@ -290,7 +291,7 @@ export default class App extends React.Component {
           {this.state.rows.map((row, rownum) =>
             <div key={"row_" + rownum}>
               <div className="cell cell-info">{8-rownum}</div>
-              {row.map((col, colnum) => 
+              {row.map((col, colnum) =>
                 <Cell
                   key={"r_" + rownum + "c_" + colnum}
                   rownum={rownum}
@@ -308,25 +309,24 @@ export default class App extends React.Component {
           }
           {this.state.selected &&
             <div>
-              {this.state.selected} -> 
+              {this.state.selected} ->
             </div>
           }
 
-          <div> 
-            {this.state.whiteMove? "white": "black"} to move 
+          <div>
+            {this.state.whiteMove? "white": "black"} to move
             {this.state.check &&
               <span> - check</span>
             }
             {this.state.mate &&
               <span>mate</span>
             }
- 
+
           </div>
- 
+
         </div>
       </div>
       </div>
     );
   }
 }
-
