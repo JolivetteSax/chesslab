@@ -3,6 +3,7 @@ import lo from 'lodash';
 export default class chess {
   getPawnMoveList(rows, piece, x, y){
     // TODO: need to add en-passant
+    // Add default to getPawnMoveList, en_passant_poss = false
     const colorMultiple = (piece[0] === 'B' ? 1 : -1);
     const moves = [];
     let movex = x;
@@ -71,7 +72,7 @@ export default class chess {
       }
       moves.push([movex, movey]);
     }
- 
+
     movex = x;
     movey = y;
     while(++movey < 8){
@@ -96,7 +97,7 @@ export default class chess {
       }
       moves.push([movex, movey]);
     }
- 
+
     return moves;
   }
 
@@ -188,8 +189,8 @@ export default class chess {
         }
       }
     }
- 
-    return moves; 
+
+    return moves;
   }
 
   getBishopMoveList(rows, piece, x, y){
@@ -260,7 +261,7 @@ export default class chess {
       if(target === '-' || target[0] !== piece[0]){
         moves.push([movex, movey]);
       }
- 
+
       if(movey - 1 > -1){
         movey--;
         let target = rows[movex][movey];
@@ -287,7 +288,7 @@ export default class chess {
       if(target === '-' || target[0] !== piece[0]){
         moves.push([movex, movey]);
       }
- 
+
       if(movey - 1 > -1){
         movey--;
         let target = rows[movex][movey];
@@ -322,9 +323,9 @@ export default class chess {
         moves.push([movex, movey]);
       }
     }
-    // TODO need to add castle on kingside and queenside 
+    // TODO need to add castle on kingside and queenside
     // in order to offer this feature need to detect "check" threat
-    return moves; 
+    return moves;
   }
 
 
@@ -392,6 +393,42 @@ export default class chess {
       }
     }
     return false; // technically, could be a pathological setup
+  }
+
+  // This function checks if enPassant will be possible on next turn
+  // Also returns the specific move that is possible for the enlightened pawn
+  enPassantCheck(rows, move, piece){
+    /*
+    console.log(piece)
+    console.log(move)
+    console.log(rows)
+    */
+    
+    // Not necessary to proceed if not a pawn Move
+    if(piece[1] !== 'P') {
+      return false;
+
+    } else { // check if two space move is used
+      if(Math.abs(move.from[1].charCodeAt() - move.to[1].charCodeAt()) === 2){
+        // Check pieces to left and to right
+        // position within array
+        let [arrayPosX,arrayPosY] = [7- (move.to.charCodeAt(1) - 49), move.to.charCodeAt(0) - 65]; // set as x,y. Check decode position in App.js
+        let adjacents = {left: rows[arrayPosX][arrayPosY-1], right: rows[arrayPosX][arrayPosY+1]};
+
+        console.log(adjacents)
+        // Narrow down capture scenario more
+        if(piece[0] === 'W' && (adjacents.left === 'BP' || adjacents.right === 'BP')) {
+          return true;
+        }
+        else if(piece[0] === 'B' && (adjacents.left === 'WP' || adjacents.right === 'WP')) {
+          return true;
+        } else { // no surrounding pieces to take vulnerable pawn
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
   }
 
   getThreatMatrix(rows){
