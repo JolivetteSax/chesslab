@@ -1,7 +1,7 @@
 import lo from 'lodash';
 
 export default class chess {
-  getPawnMoveList(rows, piece, x, y){
+  getPawnMoveList(rows, piece, x, y, enPassantAvail){
     // TODO: need to add en-passant
     // Add default to getPawnMoveList, en_passant_poss = false
     const colorMultiple = (piece[0] === 'B' ? 1 : -1);
@@ -9,6 +9,12 @@ export default class chess {
     let movex = x;
     let movey = y;
     movex = movex + (colorMultiple);
+
+    // en passant move
+    console.log(enPassantAvail)
+    if(enPassantAvail){
+      console.log("We made it")
+    }
     if(movex > -1 && movex < 8){
       if(rows[movex][movey] === '-'){
         moves.push([movex,movey]);
@@ -43,6 +49,8 @@ export default class chess {
         moves.push([movex, movey]);
       }
     }
+
+
     return moves;
   }
   getRookMoveList(rows, piece, x, y){
@@ -329,11 +337,11 @@ export default class chess {
   }
 
 
-  getMoveList(rows, piece, x, y){
+  getMoveList(rows, piece, x, y, specialMove = false){
     let moves;
     switch(piece[1]){
       case 'P':
-        moves = this.getPawnMoveList(rows, piece, x, y);
+        moves = this.getPawnMoveList(rows, piece, x, y, specialMove);
         break;
       case 'R':
         moves = this.getRookMoveList(rows, piece, x, y);
@@ -403,7 +411,7 @@ export default class chess {
     console.log(move)
     console.log(rows)
     */
-    
+
     // Not necessary to proceed if not a pawn Move
     if(piece[1] !== 'P') {
       return false;
@@ -421,11 +429,22 @@ export default class chess {
           return true;
         }
         else if(piece[0] === 'B' && (adjacents.left === 'WP' || adjacents.right === 'WP')) {
-          return true;
+
+          const empoweredPawns = [];
+          if(adjacents.left === 'WP'){
+            empoweredPawns.push([arrayPosX, arrayPosY-1]);
+          }
+
+          if(adjacents.right === 'WP'){
+            empoweredPawns.push([arrayPosX, arrayPosY+1]);
+          }
+
+          console.log(empoweredPawns)
+          return [true, empoweredPawns];
         } else { // no surrounding pieces to take vulnerable pawn
           return false;
         }
-      } else {
+      } else { // pawn didn't move two spaces
         return false;
       }
     }

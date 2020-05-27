@@ -35,6 +35,8 @@ export default class App extends React.Component {
       check: false,
       mate: false,
       currentMove: -1,  // move counter
+      enPassantAvail: false, // holds state
+      enP_pieces: [], // pieces capable of enpassant capture
     };
   }
 
@@ -119,12 +121,13 @@ export default class App extends React.Component {
     let id = ev.currentTarget.id;
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
+    let specialMove = false
 
     // Selected piece is selected again, "putting a piece back"
     if(id === this.state.selected){
       this.setState({selected: null, moves: []});
     }
-    else if(this.state.selected){
+    else if(this.state.selected){ // Piece selected, checking move
       let [row1, col1] = this.decodePosition(this.state.selected);
 
       let initiator = rows[row1][col1];
@@ -137,7 +140,28 @@ export default class App extends React.Component {
         }
       }
 
-      let moveList = this.lib.getMoveList(rows, initiator, row1, col1);
+      if(initiator[1] === 'P' && this.state.enPassantAvail) {
+        console.log("Enpassant Detected in Select Move Loop")
+        // Loop and find if initiator is empoweredPawn
+        for(const coords of this.state.enP_pieces){
+          console.log(coords)
+          if([row1,col1] === coords) {
+            specialMove = true;
+          }
+        }
+      }
+      /*
+      if(this.state.enPassantAvail && initiator[1] === 'P') {
+        let enP_pieces = this.state.enPassantAvail[1];
+        let specialMove = {type: 'enP', pieces: enp_pieces }
+      }
+      */
+
+      // TODO: add in check for castle move, and then define special move
+      // Probably going to have to special move handling later when that happens
+
+
+      let moveList = this.lib.getMoveList(rows, initiator, row1, col1, specialMove);
       moveList = this.lib.limitValidMoves(rows, initiator, row1, col1, moveList);
       let found = false;
       for(const move of moveList){
@@ -150,6 +174,7 @@ export default class App extends React.Component {
         return;
       }
 
+      // Commence making the move!
       let move = { from: this.state.selected, to: id};
       const alternatives = this.state.alternatives;
       if(this.state.currentMove < (history.length -1)){
@@ -164,20 +189,29 @@ export default class App extends React.Component {
       const threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
       const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+
+      const enP_components = this.lib.enPassantCheck(rows,move,initiator);
+      const enP_pieces = enP_components[1];
+      const enPassantAvail = enP_components[0];
+
       let mate = false;
       if(check){
         mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
       }
       let currentMove = history.length - 1;
-      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives});
+      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives, enPassantAvail, enP_pieces});
     }
-    else if(target === '-'){
+    else if(target === '-'){ // Selecting an empty space
       return;
     }
-    else { // Selecting a piece w/ .selected == null
+    else { // First selection of a piece, validate player turn
       if((this.state.whiteMove && target[0] === 'W')
         || ((!this.state.whiteMove) && target[0] === 'B')){
-        let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
+
+        if(this.state.enPassantAvail && target[1] === 'P') {
+          specialMove = true;
+        }
+        let moves = this.lib.getMoveList(this.state.rows, target, row2, col2, specialMove);
         moves = this.lib.limitValidMoves(this.state.rows, target, row2, col2, moves);
         this.setState({selected: id, moves});
       }
