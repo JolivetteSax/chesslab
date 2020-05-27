@@ -11,15 +11,18 @@ export default class chess {
     movex = movex + (colorMultiple);
 
     // en passant move
-    console.log(enPassantAvail)
     if(enPassantAvail){
       console.log("We made it")
     }
+
+    // Move forward one space, if empty and not off board
     if(movex > -1 && movex < 8){
       if(rows[movex][movey] === '-'){
         moves.push([movex,movey]);
       }
     }
+
+    // Also move forward one space if on starting pawn row
     if(x === 1 || x === 6){
       movex = movex + (colorMultiple);
       if(movex > -1 && movex < 8){
@@ -28,13 +31,15 @@ export default class chess {
         }
       }
     }
+
     movex = x;
     movey = y;
     movex = movex + (colorMultiple);
     if(movex < 0 || movex > 7){
       return moves;
     }
-    if(movey + 1 <= 7){
+
+    if(movey + 1 <= 7){ // Capture Instance
       movey += 1;
       let target = rows[movex][movey];
       if(target !== '-' && target[0] !== piece[0]){
@@ -42,7 +47,7 @@ export default class chess {
       }
     }
     movey = y;
-    if(movey - 1 >= 0){
+    if(movey - 1 >= 0){ // Capture Instance
       movey -= 1;
       let target = rows[movex][movey];
       if(target !== '-' && target[0] !== piece[0]){
