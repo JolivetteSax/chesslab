@@ -11,7 +11,7 @@ export default class chess {
     movex = movex + (colorMultiple);
 
     // en passant move
-    if(enPassantAvail){
+    if(enPassantAvail[0]){
       console.log("We made it")
     }
 
@@ -425,10 +425,10 @@ export default class chess {
       if(Math.abs(move.from[1].charCodeAt() - move.to[1].charCodeAt()) === 2){
         // Check pieces to left and to right
         // position within array
-        let [arrayPosX,arrayPosY] = [7- (move.to.charCodeAt(1) - 49), move.to.charCodeAt(0) - 65]; // set as x,y. Check decode position in App.js
-        let adjacents = {left: rows[arrayPosX][arrayPosY-1], right: rows[arrayPosX][arrayPosY+1]};
+        const [arrayPosX,arrayPosY] = [7- (move.to.charCodeAt(1) - 49), move.to.charCodeAt(0) - 65]; // set as x,y. Check decode position in App.js
+        const vulnerablePawn = [arrayPosX,arrayPosY];
+        const adjacents = {left: rows[arrayPosX][arrayPosY-1], right: rows[arrayPosX][arrayPosY+1]};
 
-        console.log(adjacents)
         // Narrow down capture scenario more
         if(piece[0] === 'W' && (adjacents.left === 'BP' || adjacents.right === 'BP')) {
           return true;
@@ -436,6 +436,7 @@ export default class chess {
         else if(piece[0] === 'B' && (adjacents.left === 'WP' || adjacents.right === 'WP')) {
 
           const empoweredPawns = [];
+
           if(adjacents.left === 'WP'){
             empoweredPawns.push([arrayPosX, arrayPosY-1]);
           }
@@ -444,8 +445,7 @@ export default class chess {
             empoweredPawns.push([arrayPosX, arrayPosY+1]);
           }
 
-          console.log(empoweredPawns)
-          return [true, empoweredPawns];
+          return [true, empoweredPawns, vulnerablePawn];
         } else { // no surrounding pieces to take vulnerable pawn
           return false;
         }

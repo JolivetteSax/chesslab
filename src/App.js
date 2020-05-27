@@ -37,6 +37,7 @@ export default class App extends React.Component {
       currentMove: -1,  // move counter
       enPassantAvail: false, // holds state
       enP_pieces: [], // pieces capable of enpassant capture
+      vulnerablePawn: [], // in enpassant scenario, the pawn in danger
     };
   }
 
@@ -193,13 +194,14 @@ export default class App extends React.Component {
       const enP_components = this.lib.enPassantCheck(rows,move,initiator);
       const enP_pieces = enP_components[1];
       const enPassantAvail = enP_components[0];
+      const vulnerablePawn = enP_components[2];
 
       let mate = false;
       if(check){
         mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
       }
       let currentMove = history.length - 1;
-      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives, enPassantAvail, enP_pieces});
+      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives, enPassantAvail, enP_pieces, vulnerablePawn});
     }
     else if(target === '-'){ // Selecting an empty space
       return;
@@ -215,7 +217,7 @@ export default class App extends React.Component {
             console.log(coords)
             if(row2 === coords[0] && col2 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
               console.log("Powerful Pawn is selected, set special move to true")
-              specialMove = true;
+              specialMove = [true, this.state.vulnerablePawn];
             }
           }
         }
