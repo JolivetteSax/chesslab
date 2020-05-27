@@ -208,9 +208,18 @@ export default class App extends React.Component {
       if((this.state.whiteMove && target[0] === 'W')
         || ((!this.state.whiteMove) && target[0] === 'B')){
 
-        if(this.state.enPassantAvail && target[1] === 'P') {
-          specialMove = true;
+
+        if(target[1] === 'P' && this.state.enPassantAvail) {
+          // Loop and find if initiator is empoweredPawn
+          for(const coords of this.state.enP_pieces){
+            console.log(coords)
+            if(row2 === coords[0] && col2 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
+              console.log("Powerful Pawn is selected, set special move to true")
+              specialMove = true;
+            }
+          }
         }
+
         let moves = this.lib.getMoveList(this.state.rows, target, row2, col2, specialMove);
         moves = this.lib.limitValidMoves(this.state.rows, target, row2, col2, moves);
         this.setState({selected: id, moves});
