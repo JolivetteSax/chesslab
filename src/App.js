@@ -148,10 +148,8 @@ export default class App extends React.Component {
       }
 
       if(initiator[1] === 'P' && this.state.enPassantAvail) {
-        console.log("Enpassant Detected in Select Move Loop")
         // Loop and find if initiator is empoweredPawn
         for(const coords of this.state.enP_pieces){
-          console.log(coords)
           if(row1 === coords[0] && col1 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
             specialMove = [true, this.state.vulnerablePawn];
           }
@@ -213,9 +211,7 @@ export default class App extends React.Component {
         if(target[1] === 'P' && this.state.enPassantAvail) {
           // Loop and find if initiator is empoweredPawn
           for(const coords of this.state.enP_pieces){
-            console.log(coords)
             if(row2 === coords[0] && col2 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
-              console.log("Powerful Pawn is selected, set special move to true")
               specialMove = [true, this.state.vulnerablePawn];
             }
           }
