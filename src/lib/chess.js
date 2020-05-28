@@ -429,11 +429,11 @@ export default class chess {
         if(piece[0] === 'W' && (adjacents.left === 'BP' || adjacents.right === 'BP')) {
           const empoweredPawns = [];
 
-          if(adjacents.left === 'WP'){
+          if(adjacents.left === 'BP'){
             empoweredPawns.push([arrayPosX, arrayPosY-1]);
           }
 
-          if(adjacents.right === 'WP'){
+          if(adjacents.right === 'BP'){
             empoweredPawns.push([arrayPosX, arrayPosY+1]);
           }
 
