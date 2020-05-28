@@ -184,7 +184,7 @@ export default class App extends React.Component {
       }
       history.push(move);
       rows = this.executeMove(rows, move.from, move.to, specialMove[0]);
-      const threats = this.lib.getThreatMatrix(rows);
+      let threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
       const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
 
@@ -192,6 +192,12 @@ export default class App extends React.Component {
       const enP_pieces = enP_components[1];
       const enPassantAvail = enP_components[0];
       const vulnerablePawn = enP_components[2];
+
+      // Check done outside of getThreatMatrix
+      // This works, but isn't as clean.
+      if(enPassantAvail) {
+        threats[vulnerablePawn[0]][vulnerablePawn[1]] += enP_pieces.length;
+      }
 
       let mate = false;
       if(check){
