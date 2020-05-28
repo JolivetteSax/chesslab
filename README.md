@@ -12,3 +12,28 @@ This code includes branches that allow you to follow along with the following vi
 The goal is to learn react.js programming through a common example and make some interesting features along the way.
 
 This also provides candidates at Payola the opportunity to show off your skills by adding features to the master and submitting a PR. 
+
+# Install and run
+
+There are no external dependencies
+`npm install`
+`npm start`
+
+# Payola
+This repo is also meant to provide candidates an opportunity to Fork/PR some code. An example of a code review of a submission is on youtube, and many thanks to the guinea pig on display! https://www.youtube.com/watch?v=ODiN8bXJ2GY
+
+# TODO opportunities
++ Castling
++ Save game
++ Networked play
++ Famous games
++ Better graphics
++ Cleaner code
++ Tests
++ Improve UX
++ Vs CPU
++ Product/Market plan
++ Integrate another chess program
++ DB/Crud/Rest backend yada yada
+
+visit http://chess-lab.com/ for more
