@@ -102,12 +102,18 @@ export default class App extends React.Component {
     return [row, col];
   }
 
-  executeMove(rows, from, to){
+  executeMove(rows, from, to,specialMove){
     let [row1, col1] = this.decodePosition(from);
     let [row2, col2] = this.decodePosition(to);
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
+
+    if(this.state.enPassantAvail && specialMove) {
+      rows[this.state.vulnerablePawn[0]][this.state.vulnerablePawn[1]] = '-';
+    }
+    // Pawn Promotion
+    // Technically allowed to promote to Knight, Rook, or Bishop as well
     if(rows[row2][col2][1] === 'P'
        && (row2 === 0 || row2 === 7)){
        const newPiece = rows[row2][col2][0] + 'Q'
@@ -179,7 +185,7 @@ export default class App extends React.Component {
         history = history.slice(0, this.state.currentMove + 1);
       }
       history.push(move);
-      rows = this.executeMove(rows, move.from, move.to);
+      rows = this.executeMove(rows, move.from, move.to, specialMove[0]);
       const threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
       const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
