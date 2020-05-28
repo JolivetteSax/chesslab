@@ -34,7 +34,10 @@ export default class App extends React.Component {
       whiteMove: true,
       check: false,
       mate: false,
-      currentMove: -1,
+      currentMove: -1,  // move counter
+      enPassantAvail: false, // holds state
+      enP_pieces: [], // pieces capable of enpassant capture
+      vulnerablePawn: [-1,-1], // in enpassant scenario, the pawn in danger
     };
   }
 
@@ -58,7 +61,7 @@ export default class App extends React.Component {
       this.playHistory({currentTarget});
     });
   }
- 
+
   renameAlt(ev){
     let index = ev.currentTarget.attributes.index.value;
     let alternatives = this.state.alternatives;
@@ -99,12 +102,18 @@ export default class App extends React.Component {
     return [row, col];
   }
 
-  executeMove(rows, from, to){
+  executeMove(rows, from, to,specialMove){
     let [row1, col1] = this.decodePosition(from);
     let [row2, col2] = this.decodePosition(to);
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
+
+    if(this.state.enPassantAvail && specialMove) {
+      rows[this.state.vulnerablePawn[0]][this.state.vulnerablePawn[1]] = '-';
+    }
+    // Pawn Promotion
+    // Technically allowed to promote to Knight, Rook, or Bishop as well
     if(rows[row2][col2][1] === 'P'
        && (row2 === 0 || row2 === 7)){
        const newPiece = rows[row2][col2][0] + 'Q'
@@ -119,15 +128,17 @@ export default class App extends React.Component {
     let id = ev.currentTarget.id;
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
+    let specialMove = [false, [-1,-1]];
 
+    // Selected piece is selected again, "putting a piece back"
     if(id === this.state.selected){
       this.setState({selected: null, moves: []});
     }
-    else if(this.state.selected){
+    else if(this.state.selected){ // Piece selected, checking move
       let [row1, col1] = this.decodePosition(this.state.selected);
 
       let initiator = rows[row1][col1];
-
+      // if not empty space, validate that move isn't onto initiator color
       if(target !== '-'){
         let targetColor = target[0];
         let initiatorColor = initiator[0];
@@ -136,7 +147,19 @@ export default class App extends React.Component {
         }
       }
 
-      let moveList = this.lib.getMoveList(rows, initiator, row1, col1);
+      if(initiator[1] === 'P' && this.state.enPassantAvail) {
+        // Loop and find if initiator is empoweredPawn
+        for(const coords of this.state.enP_pieces){
+          if(row1 === coords[0] && col1 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
+            specialMove = [true, this.state.vulnerablePawn];
+          }
+        }
+      }
+
+      // TODO: add in check for castle move, and then define special move
+      // Probably going to have to special move handling later when that happens
+
+      let moveList = this.lib.getMoveList(rows, initiator, row1, col1, specialMove);
       moveList = this.lib.limitValidMoves(rows, initiator, row1, col1, moveList);
       let found = false;
       for(const move of moveList){
@@ -145,10 +168,11 @@ export default class App extends React.Component {
           break;
         }
       }
-      if(!found){
+      if(!found){ // move not on movelist
         return;
       }
 
+      // Commence making the move!
       let move = { from: this.state.selected, to: id};
       const alternatives = this.state.alternatives;
       if(this.state.currentMove < (history.length -1)){
@@ -159,24 +183,47 @@ export default class App extends React.Component {
         history = history.slice(0, this.state.currentMove + 1);
       }
       history.push(move);
-      rows = this.executeMove(rows, move.from, move.to);
-      const threats = this.lib.getThreatMatrix(rows);
+      rows = this.executeMove(rows, move.from, move.to, specialMove[0]);
+      let threats = this.lib.getThreatMatrix(rows);
       const whiteMove = !this.state.whiteMove;
       const check = this.lib.isKingCheck((whiteMove ? 'W': 'B'), rows);
+
+      const enP_components = this.lib.enPassantCheck(rows,move,initiator);
+      const enP_pieces = enP_components[1];
+      const enPassantAvail = enP_components[0];
+      const vulnerablePawn = enP_components[2];
+
+      // Check done outside of getThreatMatrix
+      // This works, but isn't as clean.
+      if(enPassantAvail) {
+        threats[vulnerablePawn[0]][vulnerablePawn[1]] += enP_pieces.length;
+      }
+
       let mate = false;
       if(check){
         mate = this.lib.isCheckMate((whiteMove ? 'W': 'B'), rows);
       }
       let currentMove = history.length - 1;
-      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives});
+      this.setState({selected: null, currentMove, rows, moves: [], threats, history, whiteMove, check, mate, alternatives, enPassantAvail, enP_pieces, vulnerablePawn});
     }
-    else if(target === '-'){
+    else if(target === '-'){ // Selecting an empty space
       return;
     }
-    else {
+    else { // First selection of a piece, validate player turn
       if((this.state.whiteMove && target[0] === 'W')
         || ((!this.state.whiteMove) && target[0] === 'B')){
-        let moves = this.lib.getMoveList(this.state.rows, target, row2, col2);
+
+
+        if(target[1] === 'P' && this.state.enPassantAvail) {
+          // Loop and find if initiator is empoweredPawn
+          for(const coords of this.state.enP_pieces){
+            if(row2 === coords[0] && col2 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
+              specialMove = [true, this.state.vulnerablePawn];
+            }
+          }
+        }
+
+        let moves = this.lib.getMoveList(this.state.rows, target, row2, col2, specialMove);
         moves = this.lib.limitValidMoves(this.state.rows, target, row2, col2, moves);
         this.setState({selected: id, moves});
       }
@@ -211,9 +258,9 @@ export default class App extends React.Component {
         }
       }
       return (
-        <div 
-           className={classList} 
-           id={id} 
+        <div
+           className={classList}
+           id={id}
            onClick={this.select}
         >
           <Piece code={props.piece}/>
@@ -234,7 +281,7 @@ export default class App extends React.Component {
               <span>Alternative sequences: </span>
             }
             {this.state.alternatives.map((alt, altno) =>
-              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name} 
+              <span key={'alt_'+altno}><b> &nbsp; &lt; {alt.name}
                 &#x5b;
                 <span className='App-link' index={altno} onClick={this.renameAlt}>&#x2699;</span>
                 |
@@ -246,7 +293,7 @@ export default class App extends React.Component {
               </span>
             )}
         </div>
- 
+
       <div className="App">
 
        <div className="App-sidebar">
@@ -264,7 +311,7 @@ export default class App extends React.Component {
                 }
                 <hr/>
               </div>
- 
+
             {this.state.history.map((move, moveno) =>
               <div
                 key={"move_" + moveno}
@@ -290,7 +337,7 @@ export default class App extends React.Component {
           {this.state.rows.map((row, rownum) =>
             <div key={"row_" + rownum}>
               <div className="cell cell-info">{8-rownum}</div>
-              {row.map((col, colnum) => 
+              {row.map((col, colnum) =>
                 <Cell
                   key={"r_" + rownum + "c_" + colnum}
                   rownum={rownum}
@@ -308,25 +355,24 @@ export default class App extends React.Component {
           }
           {this.state.selected &&
             <div>
-              {this.state.selected} -> 
+              {this.state.selected} ->
             </div>
           }
 
-          <div> 
-            {this.state.whiteMove? "white": "black"} to move 
+          <div>
+            {this.state.whiteMove? "white": "black"} to move
             {this.state.check &&
               <span> - check</span>
             }
             {this.state.mate &&
               <span>mate</span>
             }
- 
+
           </div>
- 
+
         </div>
       </div>
       </div>
     );
   }
 }
-
