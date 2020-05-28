@@ -25,6 +25,7 @@ This repo is also meant to provide candidates an opportunity to Fork/PR some cod
 # TODO opportunities
 + Castling
 + Save game
++ Download/upload notation
 + Networked play
 + Famous games
 + Better graphics
