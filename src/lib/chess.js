@@ -11,8 +11,10 @@ export default class chess {
     movex = movex + (colorMultiple);
 
     // en passant move
+    // The vulnerable pawn coords are accessible in enPassantAvail[1]
     if(enPassantAvail[0]){
-      console.log("We made it")
+      let enPassCaptureMove = [enPassantAvail[1][0] + (colorMultiple),enPassantAvail[1][1]];
+      moves.push(enPassCaptureMove);
     }
 
     // Move forward one space, if empty and not off board
@@ -411,12 +413,6 @@ export default class chess {
   // This function checks if enPassant will be possible on next turn
   // Also returns the specific move that is possible for the enlightened pawn
   enPassantCheck(rows, move, piece){
-    /*
-    console.log(piece)
-    console.log(move)
-    console.log(rows)
-    */
-
     // Not necessary to proceed if not a pawn Move
     if(piece[1] !== 'P') {
       return false;
@@ -431,7 +427,17 @@ export default class chess {
 
         // Narrow down capture scenario more
         if(piece[0] === 'W' && (adjacents.left === 'BP' || adjacents.right === 'BP')) {
-          return true;
+          const empoweredPawns = [];
+
+          if(adjacents.left === 'WP'){
+            empoweredPawns.push([arrayPosX, arrayPosY-1]);
+          }
+
+          if(adjacents.right === 'WP'){
+            empoweredPawns.push([arrayPosX, arrayPosY+1]);
+          }
+
+          return [true, empoweredPawns, vulnerablePawn];
         }
         else if(piece[0] === 'B' && (adjacents.left === 'WP' || adjacents.right === 'WP')) {
 
@@ -447,10 +453,10 @@ export default class chess {
 
           return [true, empoweredPawns, vulnerablePawn];
         } else { // no surrounding pieces to take vulnerable pawn
-          return false;
+          return [false, [], []];
         }
       } else { // pawn didn't move two spaces
-        return false;
+        return [false, [], []];
       }
     }
   }

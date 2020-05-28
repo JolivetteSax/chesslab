@@ -37,7 +37,7 @@ export default class App extends React.Component {
       currentMove: -1,  // move counter
       enPassantAvail: false, // holds state
       enP_pieces: [], // pieces capable of enpassant capture
-      vulnerablePawn: [], // in enpassant scenario, the pawn in danger
+      vulnerablePawn: [-1,-1], // in enpassant scenario, the pawn in danger
     };
   }
 
@@ -122,7 +122,7 @@ export default class App extends React.Component {
     let id = ev.currentTarget.id;
     let [row2, col2] = this.decodePosition(id);
     let target = rows[row2][col2];
-    let specialMove = false
+    let specialMove = [false, [-1,-1]];
 
     // Selected piece is selected again, "putting a piece back"
     if(id === this.state.selected){
@@ -146,21 +146,14 @@ export default class App extends React.Component {
         // Loop and find if initiator is empoweredPawn
         for(const coords of this.state.enP_pieces){
           console.log(coords)
-          if([row1,col1] === coords) {
-            specialMove = true;
+          if(row1 === coords[0] && col1 === coords[1]) { // only ever can have 2 possible, didn't want to fuss with loop
+            specialMove = [true, this.state.vulnerablePawn];
           }
         }
       }
-      /*
-      if(this.state.enPassantAvail && initiator[1] === 'P') {
-        let enP_pieces = this.state.enPassantAvail[1];
-        let specialMove = {type: 'enP', pieces: enp_pieces }
-      }
-      */
 
       // TODO: add in check for castle move, and then define special move
       // Probably going to have to special move handling later when that happens
-
 
       let moveList = this.lib.getMoveList(rows, initiator, row1, col1, specialMove);
       moveList = this.lib.limitValidMoves(rows, initiator, row1, col1, moveList);
