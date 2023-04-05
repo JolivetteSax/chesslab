@@ -1,6 +1,93 @@
-import lo from 'lodash';
+const lo = require('lodash');
+const md5 = require('md5');
 
-export default class chess {
+
+module.exports = class Chess {
+
+ constructor(){
+    this.startingBoard = [
+        ['BR', 'BN', 'BB', 'BQ', 'BK', 'BB', 'BN', 'BR'],
+        ['BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP', 'BP'],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['-',  '-',  '-',  '-',  '-',  '-',  '-',  '-' ],
+        ['WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP', 'WP'],
+        ['WR', 'WN', 'WB', 'WQ', 'WK', 'WB', 'WN', 'WR'],
+    ];
+
+    this.state = {
+      rows : lo.cloneDeep(this.startingBoard),
+      moves: [],
+      threats: [],
+      whiteMove: true,
+      check: false,
+      mate: false,
+      currentMove: -1,  // move counter
+      enPassantAvail: false, // holds state
+      enP_pieces: [], // pieces capable of enpassant capture
+      vulnerablePawn: [-1,-1], // in enpassant scenario, the pawn in danger
+    };
+  }
+
+   execute(algebra) {
+     console.log('Moving: ' + algebra);
+     let [row2, col2] = this.decodePosition(algebra);
+     let color = (this.state.whiteMove ? 'W' : 'B');
+     let row1, col1;
+     let allMoves = [];
+     outer : for(let x=0;x<8;x++){
+       for(let y=0;y<8;y++){
+         const piece = this.state.rows[x][y];
+         if(piece !== '-' && piece[0] === color){
+           const moves = this.getMoveList(this.state.rows, piece, x, y);
+           for(let move of moves){
+             if(move[0] == row2 && move[1] == col2){
+               // found
+               console.log('found');
+               [row1, col1] = [x, y];
+               break outer;
+             } 
+           }
+         }
+       }
+     }
+     console.log('Decoded as %i,%i - %i,%i', row1, col1, row2, col2);
+
+   }
+
+   getStateHash(){
+     let str = this.state.rows.flat(1).join('');
+     return md5(str);
+   }
+
+   decodePosition(id){
+     id = id.toUpperCase();
+     let col = id.charCodeAt(0) - 65;
+     let row = 7-(id.charCodeAt(1) - 49);
+     return [row, col];
+   }
+
+   executeMove(rows, from, to,specialMove){
+    let [row1, col1] = this.decodePosition(from);
+    let [row2, col2] = this.decodePosition(to);
+
+    rows[row2][col2] = rows[row1][col1];
+    rows[row1][col1] = '-';
+
+    if(this.state.enPassantAvail && specialMove) {
+      rows[this.state.vulnerablePawn[0]][this.state.vulnerablePawn[1]] = '-';
+    }
+    // Pawn Promotion
+    // Technically allowed to promote to Knight, Rook, or Bishop as well
+    if(rows[row2][col2][1] === 'P'
+       && (row2 === 0 || row2 === 7)){
+       const newPiece = rows[row2][col2][0] + 'Q'
+       rows[row2][col2] = newPiece;
+    }
+    return rows;
+  }
+
   getPawnMoveList(rows, piece, x, y, enPassantAvail){
     // TODO: need to add en-passant
     // Add default to getPawnMoveList, en_passant_poss = false
@@ -500,4 +587,4 @@ export default class chess {
     return true;
   }
 
-}
+};
