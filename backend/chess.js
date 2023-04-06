@@ -260,12 +260,14 @@ module.exports = class Chess {
       }
     }
 
-    // Also move forward one space if on starting pawn row
-    if(x === 1 || x === 6){
-      movex = movex + (colorMultiple);
-      if(movex > -1 && movex < 8){
-        if(rows[movex][movey] === '-'){
-          moves.push([movex,movey]);
+    if(rows[movex][movey] === '-'){ // only if the preceeding space was clear
+      // Also move forward one space if on starting pawn row
+      if(x === 1 || x === 6){
+        movex = movex + (colorMultiple);
+        if(movex > -1 && movex < 8){
+          if(rows[movex][movey] === '-'){
+            moves.push([movex,movey]);
+          }
         }
       }
     }

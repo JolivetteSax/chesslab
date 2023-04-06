@@ -50,7 +50,8 @@ game_loop: for(let obj of games){
 
     try{
       chess.execute(move.move);
-    }catch (error){
+    }
+    catch (error){
       console.log('Invalid: ' + number + ' - '  + move.move);
       chess.printBoard();
       continue game_loop;
