@@ -1,6 +1,8 @@
 const fs = require('fs');
 
 const pgnParser = require('pgn-parser');
+const Chess = require('./chess');
+
 console.log('loading ' + process.argv[2]);
 const pgn = fs.readFileSync(process.argv[2]).toString();
 // accumulator
@@ -31,3 +33,17 @@ if(!headers){
   games.push(pgnParser.parse(game));
 }
 console.log(games.length);
+let count = 0;
+for(let obj of games){
+  //console.log(obj);
+  let chess = new Chess();
+  for (let move of obj[0].moves){
+    if(move.move_number){
+    //  console.log('Move: ' + move.move_number);
+    }
+    //console.log( move.move);
+    chess.execute(move.move);
+  }
+  console.log('Game# ' + (count++));
+  chess.printBoard();
+}

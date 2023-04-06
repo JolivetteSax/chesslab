@@ -29,33 +29,164 @@ module.exports = class Chess {
       vulnerablePawn: [-1,-1], // in enpassant scenario, the pawn in danger
     };
   }
+   castleKingside(){
+     let row1 = 7;
+     let row2 = 7;
+     let col1 = 4;
+     let col2 = 6;
+     if(!this.state.whiteMove){
+       row1 = 0;
+       row2 = 0;
+     }
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.state.whiteMove = !this.state.whiteMove;
+     
+     col1 = 7;
+     col2 = 5;
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+   }
+
+   castleQueenside(){
+     let row1 = 7;
+     let row2 = 7;
+     let col1 = 4;
+     let col2 = 2;
+     if(!this.state.whiteMove){
+       row1 = 0;
+       row2 = 0;
+     }
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.state.whiteMove = !this.state.whiteMove;
+     
+     col1 = 0;
+     col2 = 3;
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+   }
+
 
    execute(algebra) {
-     console.log('Moving: ' + algebra);
-     let [row2, col2] = this.decodePosition(algebra);
      let color = (this.state.whiteMove ? 'W' : 'B');
+     if(algebra === 'O-O' || algebra === 'O-O-O'){
+       if(algebra === 'O-O'){
+         this.castleKingside();
+       }
+       else{
+         this.castleQueenside();
+       }
+       return;
+     }
+     let promote = 'Q';
+     let figure = undefined;
+     let file = undefined;
+     let rank = undefined;
+
+     let destination = '';
+     let unpack = [...algebra];
+     destination = unpack.pop();
+     if(destination === '#'){ // checkmate move
+       destination = unpack.pop();
+     }
+     if(destination === '+'){ // check
+       destination = unpack.pop();
+     }
+
+     if(unpack.slice(-1) === '='){
+       promote = destination;
+       unpack.pop();
+       destination = unpack.pop();
+     }
+
+     destination = unpack.pop() + destination;
+
+     if(unpack.length >= 1){
+       let letter = unpack.shift();
+       if(letter === letter.toUpperCase()){
+         figure = letter;
+       }
+       else{
+         file = letter;
+       }
+     }
+
+     if(!figure){
+       figure = 'P';
+     }
+     if(unpack.length >= 1){
+       file = unpack.shift();
+       if(file === 'x'){
+         file = undefined;
+       }
+     }
+     if(unpack.length >= 1){
+       rank = unpack.shift();
+       if(rank === 'x'){
+         rank = undefined;
+       }
+     }
+     
+     if(file){
+       file = file.toUpperCase();
+       file = file.charCodeAt(0) - 65;
+     }
+     if(rank){
+       rank = rank.toUpperCase();
+       rank = 7-(rank.charCodeAt(0) - 49);
+     }
+     let [row2, col2] = this.decodePosition(destination);
+
      let row1, col1;
      let allMoves = [];
      outer : for(let x=0;x<8;x++){
-       for(let y=0;y<8;y++){
+       if(rank != undefined && rank !== x){
+         continue outer;
+       }
+       inner: for(let y=0;y<8;y++){
+         if(file != undefined && file !== y){
+           continue inner;
+         }
          const piece = this.state.rows[x][y];
          if(piece !== '-' && piece[0] === color){
+           if(figure && piece[1] != figure){
+             continue inner;
+           }
            const moves = this.getMoveList(this.state.rows, piece, x, y);
            for(let move of moves){
              if(move[0] == row2 && move[1] == col2){
                // found
-               console.log('found');
                [row1, col1] = [x, y];
                break outer;
-             } 
+             }
            }
          }
        }
      }
-     console.log('Decoded as %i,%i - %i,%i', row1, col1, row2, col2);
-
+     if(row1 === undefined){
+       throw "Illegal move: " + algebra;
+     }
+     //console.log('Decoded as %i,%i - %i,%i', row1, col1, row2, col2);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
    }
 
+   printBoard(){
+     if(this.state.whiteMove){
+       console.log('White to move');
+     }
+     else{
+       console.log('Black to move');
+     }
+     let row;
+     for(let x = 0; x< 8; x++){
+       row = '';
+       for(let y = 0; y<8; y++){
+         let piece = this.state.rows[x][y];
+	 if(piece === '-'){
+           piece = '--'
+         }
+         row += ' ' + piece;
+       }
+       console.log(row);
+     }
+   }
    getStateHash(){
      let str = this.state.rows.flat(1).join('');
      return md5(str);
@@ -69,8 +200,8 @@ module.exports = class Chess {
    }
 
    executeMove(rows, from, to,specialMove){
-    let [row1, col1] = this.decodePosition(from);
-    let [row2, col2] = this.decodePosition(to);
+    let [row1, col1] = from;
+    let [row2, col2] = to;
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
@@ -85,6 +216,9 @@ module.exports = class Chess {
        const newPiece = rows[row2][col2][0] + 'Q'
        rows[row2][col2] = newPiece;
     }
+
+    this.state.whiteMove = !this.state.whiteMove;
+
     return rows;
   }
 
