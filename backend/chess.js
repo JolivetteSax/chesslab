@@ -97,40 +97,55 @@ module.exports = class Chess {
      }
 
      destination = unpack.pop() + destination;
-
+     //console.log("unpack: " + unpack.join());
      if(unpack.length >= 1){
        let letter = unpack.shift();
        if(letter === letter.toUpperCase()){
          figure = letter;
+         //console.log('figure is: ' + figure);
        }
        else{
          file = letter;
+         //console.log('File is: ' + file);
        }
      }
 
      if(!figure){
        figure = 'P';
      }
-     if(unpack.length >= 1){
+
+     if(unpack.length >= 1 && file == undefined){
        file = unpack.shift();
        if(file === 'x'){
          file = undefined;
        }
      }
-     if(unpack.length >= 1){
+     if(file != undefined){
+       // need to check if the file is ommitted and a rank is spec'd
+       if(file.match(/[1-8]/)){
+         rank = file;
+         file = undefined;
+       }
+     }
+     if(unpack.length >= 1 && rank == undefined){
        rank = unpack.shift();
        if(rank === 'x'){
          rank = undefined;
        }
+       else{
+         //console.log('rank is: ' + rank);
+       }
      }
      
-     if(file){
+     if(file !== undefined){
        file = file.toUpperCase();
        file = file.charCodeAt(0) - 65;
+       //console.log('File decoded as: ' + file);
      }
-     if(rank){
+     if(rank !== undefined){
        rank = rank.toUpperCase();
        rank = 7-(rank.charCodeAt(0) - 49);
+       //console.log('Rank decoded as: ' + rank);
      }
      let [row2, col2] = this.decodePosition(destination);
 

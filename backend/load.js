@@ -33,17 +33,29 @@ if(!headers){
   games.push(pgnParser.parse(game));
 }
 console.log(games.length);
+
 let count = 0;
-for(let obj of games){
+game_loop: for(let obj of games){
   //console.log(obj);
   let chess = new Chess();
+  console.log();
+  console.log('************************');
+  console.log('Game# ' + (count++));
+  console.log(obj[0].headers);
+  let number = 0;
   for (let move of obj[0].moves){
     if(move.move_number){
-    //  console.log('Move: ' + move.move_number);
+      number = move.move_number;
     }
-    //console.log( move.move);
-    chess.execute(move.move);
+
+    try{
+      chess.execute(move.move);
+    }catch (error){
+      console.log('Invalid: ' + number + ' - '  + move.move);
+      chess.printBoard();
+      continue game_loop;
+    }
   }
-  console.log('Game# ' + (count++));
+
   chess.printBoard();
 }
