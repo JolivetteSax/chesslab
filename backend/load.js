@@ -46,10 +46,13 @@ game_loop: for(let obj of games){
   for (let move of obj[0].moves){
     if(move.move_number){
       number = move.move_number;
+//      console.log("move: " + number);
     }
 
     try{
       chess.execute(move.move);
+//      console.log(move.move);
+//      chess.printBoard();
     }
     catch (error){
       console.log('Invalid: ' + number + ' - '  + move.move);

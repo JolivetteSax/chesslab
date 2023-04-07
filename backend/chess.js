@@ -21,12 +21,11 @@ module.exports = class Chess {
       moves: [],
       threats: [],
       whiteMove: true,
+      enPassant: undefined,
+      promotion: 'Q',
       check: false,
       mate: false,
       currentMove: -1,  // move counter
-      enPassantAvail: false, // holds state
-      enP_pieces: [], // pieces capable of enpassant capture
-      vulnerablePawn: [-1,-1], // in enpassant scenario, the pawn in danger
     };
   }
    castleKingside(){
@@ -38,12 +37,12 @@ module.exports = class Chess {
        row1 = 0;
        row2 = 0;
      }
-     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
      this.state.whiteMove = !this.state.whiteMove;
      
      col1 = 7;
      col2 = 5;
-     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
    }
 
    castleQueenside(){
@@ -55,12 +54,12 @@ module.exports = class Chess {
        row1 = 0;
        row2 = 0;
      }
-     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
      this.state.whiteMove = !this.state.whiteMove;
      
      col1 = 0;
      col2 = 3;
-     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
    }
 
 
@@ -95,6 +94,7 @@ module.exports = class Chess {
        unpack.pop();
        destination = unpack.pop();
      }
+     this.state.promotion = promote;
 
      destination = unpack.pop() + destination;
      //console.log("unpack: " + unpack.join());
@@ -179,7 +179,7 @@ module.exports = class Chess {
        throw "Illegal move: " + algebra;
      }
      //console.log('Decoded as %i,%i - %i,%i', row1, col1, row2, col2);
-     this.executeMove(this.state.rows, [row1, col1], [row2, col2], false);
+     this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
    }
 
    printBoard(){
@@ -214,22 +214,53 @@ module.exports = class Chess {
      return [row, col];
    }
 
-   executeMove(rows, from, to,specialMove){
+   executeMove(rows, from, to){
     let [row1, col1] = from;
     let [row2, col2] = to;
+
+    let targetSquare = rows[row2][row1];
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
 
-    if(this.state.enPassantAvail && specialMove) {
-      rows[this.state.vulnerablePawn[0]][this.state.vulnerablePawn[1]] = '-';
-    }
-    // Pawn Promotion
-    // Technically allowed to promote to Knight, Rook, or Bishop as well
-    if(rows[row2][col2][1] === 'P'
-       && (row2 === 0 || row2 === 7)){
-       const newPiece = rows[row2][col2][0] + 'Q'
-       rows[row2][col2] = newPiece;
+    // clearing the flag used to generate possible moves
+    this.state.enPassant = undefined;
+
+    // Pawn shenanigans
+    if(rows[row2][col2][1] === 'P'){
+       if (row2 === 0 || row2 === 7){ // this is a promotion either way
+         const newPiece = rows[row2][col2][0] + this.state.promotion;
+         rows[row2][col2] = newPiece;
+         this.state.promotion = 'Q'; // reset default...
+       }
+       let delta_x = row2 - row1;
+       let delta_y = col2 - col1;
+       if(delta_x < 0){
+         delta_x = delta_x * -1;
+       }
+       if(delta_y < 0){
+         delta_y = delta_y * -1;
+       }
+
+       // check for diagonal to empty square
+       // if so, capture of the pass pawn on adjacent square 
+       if(targetSquare === '-' && delta_x === 1 && delta_y === 1){
+         if(this.state.whiteMove){
+           if(rows[row1][col2] === 'BP' && row2 === 5){
+             rows[row1][col2] = '-';
+           }
+         }
+         else{
+           if(rows[row1][col2] === 'WP' && row2 === 2){
+             rows[row1][col2] = '-';
+           }
+         }
+       }
+
+       if(delta_x === 2){// double move, set enPassant y-col value
+         this.state.enPassant = col1;
+       }
+
     }
 
     this.state.whiteMove = !this.state.whiteMove;
@@ -237,21 +268,12 @@ module.exports = class Chess {
     return rows;
   }
 
-  getPawnMoveList(rows, piece, x, y, enPassantAvail){
-    // TODO: need to add en-passant
-    // Add default to getPawnMoveList, en_passant_poss = false
+  getPawnMoveList(rows, piece, x, y){
     const colorMultiple = (piece[0] === 'B' ? 1 : -1);
     const moves = [];
     let movex = x;
     let movey = y;
     movex = movex + (colorMultiple);
-
-    // en passant move
-    // The vulnerable pawn coords are accessible in enPassantAvail[1]
-    if(enPassantAvail[0]){
-      let enPassCaptureMove = [enPassantAvail[1][0] + (colorMultiple),enPassantAvail[1][1]];
-      moves.push(enPassCaptureMove);
-    }
 
     // Move forward one space, if empty and not off board
     if(movex > -1 && movex < 8){
@@ -282,17 +304,42 @@ module.exports = class Chess {
     if(movey + 1 <= 7){ // Capture Instance
       movey += 1;
       let target = rows[movex][movey];
-      if(target !== '-' && target[0] !== piece[0]){
-        moves.push([movex, movey]);
+      if(target !== '-'){
+        if(target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
+      }
+      else{
+        if(this.state.enPassant === movey){
+          if(this.state.whiteMove && movex === 2){
+            moves.push([movex, movey]);
+          }
+          if((!this.state.whiteMove) && movex === 5){
+            moves.push([movex, movey]);
+          }
+        }
       }
     }
     movey = y;
     if(movey - 1 >= 0){ // Capture Instance
       movey -= 1;
       let target = rows[movex][movey];
-      if(target !== '-' && target[0] !== piece[0]){
-        moves.push([movex, movey]);
+      if(target !== '-'){
+        if(target[0] !== piece[0]){
+          moves.push([movex, movey]);
+        }
       }
+      else{
+        if(this.state.enPassant === movey){
+          if(this.state.whiteMove && movex === 2){
+            moves.push([movex, movey]);
+          }
+          if((!this.state.whiteMove) && movex === 5){
+            moves.push([movex, movey]);
+          }
+        }
+      }
+
     }
 
 
@@ -576,17 +623,15 @@ module.exports = class Chess {
         moves.push([movex, movey]);
       }
     }
-    // TODO need to add castle on kingside and queenside
-    // in order to offer this feature need to detect "check" threat
     return moves;
   }
 
 
-  getMoveList(rows, piece, x, y, specialMove = false){
+  getMoveList(rows, piece, x, y){
     let moves;
     switch(piece[1]){
       case 'P':
-        moves = this.getPawnMoveList(rows, piece, x, y, specialMove);
+        moves = this.getPawnMoveList(rows, piece, x, y);
         break;
       case 'R':
         moves = this.getRookMoveList(rows, piece, x, y);
@@ -646,57 +691,6 @@ module.exports = class Chess {
       }
     }
     return false; // technically, could be a pathological setup
-  }
-
-  // This function checks if enPassant will be possible on next turn
-  // Also returns the specific move that is possible for the enlightened pawn
-  enPassantCheck(rows, move, piece){
-    // Not necessary to proceed if not a pawn Move
-    if(piece[1] !== 'P') {
-      return false;
-
-    } else { // check if two space move is used
-      if(Math.abs(move.from[1].charCodeAt() - move.to[1].charCodeAt()) === 2){
-        // Check pieces to left and to right
-        // position within array
-        const [arrayPosX,arrayPosY] = [7- (move.to.charCodeAt(1) - 49), move.to.charCodeAt(0) - 65]; // set as x,y. Check decode position in App.js
-        const vulnerablePawn = [arrayPosX,arrayPosY];
-        const adjacents = {left: rows[arrayPosX][arrayPosY-1], right: rows[arrayPosX][arrayPosY+1]};
-
-        // Narrow down capture scenario more
-        if(piece[0] === 'W' && (adjacents.left === 'BP' || adjacents.right === 'BP')) {
-          const empoweredPawns = [];
-
-          if(adjacents.left === 'BP'){
-            empoweredPawns.push([arrayPosX, arrayPosY-1]);
-          }
-
-          if(adjacents.right === 'BP'){
-            empoweredPawns.push([arrayPosX, arrayPosY+1]);
-          }
-
-          return [true, empoweredPawns, vulnerablePawn];
-        }
-        else if(piece[0] === 'B' && (adjacents.left === 'WP' || adjacents.right === 'WP')) {
-
-          const empoweredPawns = [];
-
-          if(adjacents.left === 'WP'){
-            empoweredPawns.push([arrayPosX, arrayPosY-1]);
-          }
-
-          if(adjacents.right === 'WP'){
-            empoweredPawns.push([arrayPosX, arrayPosY+1]);
-          }
-
-          return [true, empoweredPawns, vulnerablePawn];
-        } else { // no surrounding pieces to take vulnerable pawn
-          return [false, [], []];
-        }
-      } else { // pawn didn't move two spaces
-        return [false, [], []];
-      }
-    }
   }
 
   getThreatMatrix(rows){
