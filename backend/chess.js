@@ -246,12 +246,12 @@ module.exports = class Chess {
        // if so, capture of the pass pawn on adjacent square 
        if(targetSquare === '-' && delta_x === 1 && delta_y === 1){
          if(this.state.whiteMove){
-           if(rows[row1][col2] === 'BP' && row2 === 5){
+           if(rows[row1][col2] === 'BP' && row2 === 2){
              rows[row1][col2] = '-';
            }
          }
          else{
-           if(rows[row1][col2] === 'WP' && row2 === 2){
+           if(rows[row1][col2] === 'WP' && row2 === 5){
              rows[row1][col2] = '-';
            }
          }
