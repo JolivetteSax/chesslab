@@ -64,7 +64,11 @@ module.exports = class Chess {
 
 
    execute(algebra) {
+     //console.log('Alg: ' + algebra);
      let color = (this.state.whiteMove ? 'W' : 'B');
+     if(algebra.endsWith('+') || algebra.endsWith('#')){
+       algebra = algebra.substr(0, algebra.length - 1);
+     }
      if(algebra === 'O-O' || algebra === 'O-O-O'){
        if(algebra === 'O-O'){
          this.castleKingside();
@@ -82,14 +86,12 @@ module.exports = class Chess {
      let destination = '';
      let unpack = [...algebra];
      destination = unpack.pop();
-     if(destination === '#'){ // checkmate move
-       destination = unpack.pop();
-     }
-     if(destination === '+'){ // check
-       destination = unpack.pop();
-     }
 
-     if(unpack.slice(-1) === '='){
+     //console.log('dest: ' + destination);
+     let slice = unpack.slice(-1).join();
+     //console.log('slice: "' + slice + '"');
+     if(slice === '='){
+       //console.log('Promotion');
        promote = destination;
        unpack.pop();
        destination = unpack.pop();
@@ -97,6 +99,7 @@ module.exports = class Chess {
      this.state.promotion = promote;
 
      destination = unpack.pop() + destination;
+     //console.log('destination: ' + destination);
      //console.log("unpack: " + unpack.join());
      if(unpack.length >= 1){
        let letter = unpack.shift();
@@ -148,7 +151,7 @@ module.exports = class Chess {
        //console.log('Rank decoded as: ' + rank);
      }
      let [row2, col2] = this.decodePosition(destination);
-
+     //console.log('target decoded x: %i, %i', row2, col2);
      let row1, col1;
      let allMoves = [];
      outer : for(let x=0;x<8;x++){
@@ -164,7 +167,8 @@ module.exports = class Chess {
            if(figure && piece[1] != figure){
              continue inner;
            }
-           const moves = this.getMoveList(this.state.rows, piece, x, y);
+           let moves = this.getMoveList(this.state.rows, piece, x, y);
+           moves = this.limitValidMoves(this.state.rows, piece, x, y, moves);
            for(let move of moves){
              if(move[0] == row2 && move[1] == col2){
                // found
@@ -218,13 +222,10 @@ module.exports = class Chess {
     let [row1, col1] = from;
     let [row2, col2] = to;
 
-    let targetSquare = rows[row2][row1];
+    let targetSquare = rows[row2][col2];
 
     rows[row2][col2] = rows[row1][col1];
     rows[row1][col1] = '-';
-
-    // clearing the flag used to generate possible moves
-    this.state.enPassant = undefined;
 
     // Pawn shenanigans
     if(rows[row2][col2][1] === 'P'){
@@ -245,6 +246,8 @@ module.exports = class Chess {
        // check for diagonal to empty square
        // if so, capture of the pass pawn on adjacent square 
        if(targetSquare === '-' && delta_x === 1 && delta_y === 1){
+         //console.log('En passant capture: ' + rows[row1][col2]);
+         //console.log('target SQ: ' + targetSquare);
          if(this.state.whiteMove){
            if(rows[row1][col2] === 'BP' && row2 === 2){
              rows[row1][col2] = '-';
@@ -256,6 +259,9 @@ module.exports = class Chess {
            }
          }
        }
+       // clearing the flag used to generate possible moves
+       this.state.enPassant = undefined;
+
 
        if(delta_x === 2){// double move, set enPassant y-col value
          this.state.enPassant = col1;
@@ -676,7 +682,7 @@ module.exports = class Chess {
   }
 
   isKingCheck(color, rows){
-    const threats = this.getThreatMatrix(rows);
+    const threats = this.getThreatMatrix(rows, color);
     for(let x=0;x<8;x++){
       for(let y=0;y<8;y++){
         if(rows[x][y][0] === color
@@ -693,7 +699,7 @@ module.exports = class Chess {
     return false; // technically, could be a pathological setup
   }
 
-  getThreatMatrix(rows){
+  getThreatMatrix(rows, color){
     const threats = [];
     let allMoves = [];
     for(let x=0;x<8;x++){
@@ -701,7 +707,7 @@ module.exports = class Chess {
       for(let y=0;y<8;y++){
         threatRow.push(0);
         const piece = rows[x][y];
-        if(piece !== '-'){
+        if(piece !== '-' && piece[0] !== color){
           const moves = this.getMoveList(rows, piece, x, y);
           allMoves = allMoves.concat(moves);
         }

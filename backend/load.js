@@ -50,8 +50,8 @@ game_loop: for(let obj of games){
     }
 
     try{
-      chess.execute(move.move);
       //console.log(move.move);
+      chess.execute(move.move);
       //chess.printBoard();
     }
     catch (error){
