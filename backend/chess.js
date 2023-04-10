@@ -186,6 +186,23 @@ module.exports = class Chess {
      this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
    }
 
+   getBoardString(){
+     let str = '';
+     let row;
+     for(let x = 0; x< 8; x++){
+       row = '';
+       for(let y = 0; y<8; y++){
+         let piece = this.state.rows[x][y];
+	 if(piece === '-'){
+           piece = '--'
+         }
+         row += ' ' + piece;
+       }
+       str += row + '\n';
+     }
+     return str;
+   }
+
    printBoard(){
      if(this.state.whiteMove){
        console.log('White to move');

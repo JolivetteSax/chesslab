@@ -35,6 +35,9 @@ if(!headers){
 console.log(games.length);
 
 let count = 0;
+states = {};
+boards = {};
+meta = {};
 game_loop: for(let obj of games){
   //console.log(obj);
   let chess = new Chess();
@@ -43,6 +46,7 @@ game_loop: for(let obj of games){
   console.log('Game# ' + (count++));
   console.log(obj[0].headers);
   let number = 0;
+
   for (let move of obj[0].moves){
     if(move.move_number){
       number = move.move_number;
@@ -53,6 +57,16 @@ game_loop: for(let obj of games){
       //console.log(move.move);
       chess.execute(move.move);
       //chess.printBoard();
+      if(number > 5){
+        hash = chess.getStateHash();
+        if(states.hasOwnProperty(hash)){
+          states[hash]++;
+        }
+        else{
+          states[hash] = 0;
+          boards[hash] = chess.getBoardString();
+        }
+      }
     }
     catch (error){
       console.log('Invalid: ' + number + ' - '  + move.move);
@@ -62,4 +76,26 @@ game_loop: for(let obj of games){
   }
 
   chess.printBoard();
+}
+listing = [];
+for(const hash in states){
+  count = states[hash];
+  if(count > 0){
+    listing.push({hash, count});
+  }
+}
+
+listing = listing.sort((a, b) => {
+  if(a.count === b.count) 
+    return 0;
+  if(a.count < b.count)
+    return 1;
+  return -1;
+});
+
+for(const pair of listing){
+  let [hash, count] = Object.values(pair);
+  let board = boards[hash];
+  console.log("State: %s -> %i", hash, count)
+  console.log(board);
 }
