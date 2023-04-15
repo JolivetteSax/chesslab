@@ -40,15 +40,28 @@ boards = {};
 meta = {};
 alts = {};
 game_loop: for(let obj of games){
-  //console.log(obj);
   let chess = new Chess();
-  console.log();
-  console.log('************************');
-  console.log('Game# ' + (count++));
-  console.log(obj[0].headers);
-  let number = 0;
+  // the parser kicks it out as an array
+  const headers = obj[0].headers;
+  const moves = obj[0].moves;
+  count++;
+  //console.log();
+  //console.log('************************');
+  //console.log('Game# ' + count);
+  //console.log(headers);
 
-  for (let move of obj[0].moves){
+  let info = `Match ${count}.`;
+  for(const header of headers){
+    if(header.name === 'Date' || header.name === 'Round'){
+      info += ' ' + header.value;
+    }
+    else if(header.name === 'White' || header.name === 'Black'){
+      info += ' ' + header.value;
+    }
+  }
+  let number = 0;
+  let currentHashes = {};
+  move_loop: for (let move of moves){
     if(move.move_number){
       number = move.move_number;
       //console.log("move: " + number);
@@ -58,29 +71,6 @@ game_loop: for(let obj of games){
       chess.execute(move.move);
       //console.log(move.move);
       //chess.printBoard();
-      if(number > 25){
-        hash = chess.getStateHash();
-        if(states.hasOwnProperty(hash)){
-          states[hash]++;
-        }
-        else{
-          states[hash] = 0;
-          boards[hash] = chess.getBoardString();
-        }
-        let hashes = chess.getAltHashes();
-        for(const altHash of hashes){
-          if(alts.hasOwnProperty(altHash)){
-            primary = alts[altHash];
-            if(primary !== hash){ // otherwise we're already matching
-              console.log('Alt match %s -> %s', altHash, primary);
-              states[primary]++;
-            }
-          }
-          else{
-            alts[altHash] = hash;
-          }
-        }
-      }
     }
     catch (error){
       console.log(error);
@@ -88,9 +78,50 @@ game_loop: for(let obj of games){
       chess.printBoard();
       continue game_loop;
     }
+    if(number > 10){
+      hash = chess.getStateHash();
+      // ignore matches within the same game...
+      if(currentHashes.hasOwnProperty(hash)){
+        continue move_loop;
+      }
+      else{
+        currentHashes[hash] = true;
+      }
+      if(states.hasOwnProperty(hash)){
+        states[hash]++;
+        meta[hash].push(info);
+      }
+      else {
+        states[hash] = 0;
+        boards[hash] = chess.getBoardString();
+        meta[hash] = [info];
+      }
+      let hashes = chess.getAltHashes();
+      let mirrorPrimaries = {}; // if it matches in order, it'll match later mirrors
+      alt_loop: for(const altHash of hashes){
+        if(alts.hasOwnProperty(altHash)){
+          primary = alts[altHash];
+          if(mirrorPrimaries.hasOwnProperty(primary)){
+            continue alt_loop;
+          }
+          mirrorPrimaries[primary] = true;
+          if(primary === hash){ // otherwise we're already matching this exactly
+                                // so obviously the alts will match too
+            continue alt_loop;
+          }
+          //console.log('Alt match %s -> %s', altHash, primary);
+          states[primary]++;
+          meta[primary].push(info+' (Mirrored)');
+        }
+        else{
+          alts[altHash] = hash;
+        }
+      }
+    }
+ 
   }
 
-  chess.printBoard();
+  //chess.printBoard();
 }
 listing = [];
 for(const hash in states){
@@ -111,6 +142,8 @@ listing = listing.sort((a, b) => {
 for(const pair of listing){
   let [hash, count] = Object.values(pair);
   let board = boards[hash];
-  console.log("State: %s -> %i", hash, count)
+  let infoList = meta[hash];
+  console.log("State: %s -> %i", hash, count);
   console.log(board);
+  console.log(infoList);
 }

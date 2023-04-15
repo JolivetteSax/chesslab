@@ -252,10 +252,32 @@ module.exports = class Chess {
          flipped[7-x][y] = piece;
        }
      }
- 
-     let str2 = flipped.flat(1).join('');
-     //this.printRows(flipped);
-     return [md5(str2)];
+
+     let mirrored = lo.cloneDeep(this.state.rows);
+     for(let x = 0; x< 8; x++){
+       for(let y = 0; y<4; y++){
+         let piece = mirrored[x][y];
+         let mirror = mirrored[x][7-y];
+         mirrored[x][y] = mirror;
+         mirrored[x][7-y] = piece;
+       }
+     }
+
+     let both = lo.cloneDeep(flipped);
+     for(let x = 0; x< 8; x++){
+       for(let y = 0; y<4; y++){
+         let piece = both[x][y];
+         let mirror = both[x][7-y];
+         both[x][y] = mirror;
+         both[x][7-y] = piece;
+       }
+     }
+     
+     let str1 = flipped.flat(1).join('');
+     let str2 = mirrored.flat(1).join('');
+     let str3 = both.flat(1).join('');
+     //this.printRows(mirrored);
+     return [md5(str1), md5(str2), md5(str3)];
    }
 
    decodePosition(id){
