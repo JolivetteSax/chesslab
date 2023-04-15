@@ -38,6 +38,7 @@ let count = 0;
 states = {};
 boards = {};
 meta = {};
+alts = {};
 game_loop: for(let obj of games){
   //console.log(obj);
   let chess = new Chess();
@@ -54,10 +55,10 @@ game_loop: for(let obj of games){
     }
 
     try{
-      //console.log(move.move);
       chess.execute(move.move);
+      //console.log(move.move);
       //chess.printBoard();
-      if(number > 5){
+      if(number > 25){
         hash = chess.getStateHash();
         if(states.hasOwnProperty(hash)){
           states[hash]++;
@@ -66,9 +67,23 @@ game_loop: for(let obj of games){
           states[hash] = 0;
           boards[hash] = chess.getBoardString();
         }
+        let hashes = chess.getAltHashes();
+        for(const altHash of hashes){
+          if(alts.hasOwnProperty(altHash)){
+            primary = alts[altHash];
+            if(primary !== hash){ // otherwise we're already matching
+              console.log('Alt match %s -> %s', altHash, primary);
+              states[primary]++;
+            }
+          }
+          else{
+            alts[altHash] = hash;
+          }
+        }
       }
     }
     catch (error){
+      console.log(error);
       console.log('Invalid: ' + number + ' - '  + move.move);
       chess.printBoard();
       continue game_loop;

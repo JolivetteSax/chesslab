@@ -185,7 +185,7 @@ module.exports = class Chess {
      //console.log('Decoded as %i,%i - %i,%i', row1, col1, row2, col2);
      this.executeMove(this.state.rows, [row1, col1], [row2, col2]);
    }
-
+   
    getBoardString(){
      let str = '';
      let row;
@@ -210,11 +210,16 @@ module.exports = class Chess {
      else{
        console.log('Black to move');
      }
+     this.printRows();
+   }
+
+   printRows(rows = this.state.rows){
+     console.log();
      let row;
      for(let x = 0; x< 8; x++){
        row = '';
        for(let y = 0; y<8; y++){
-         let piece = this.state.rows[x][y];
+         let piece = rows[x][y];
 	 if(piece === '-'){
            piece = '--'
          }
@@ -226,6 +231,31 @@ module.exports = class Chess {
    getStateHash(){
      let str = this.state.rows.flat(1).join('');
      return md5(str);
+   }
+
+   getAltHashes(){
+     let flipped = lo.cloneDeep(this.state.rows);
+
+     for(let x = 0; x< 4; x++){
+       for(let y = 0; y<8; y++){
+         let piece = flipped[x][y];
+         let mirror = flipped[7-x][y];
+
+         if(piece !== '-'){
+           piece = (piece[0] === 'W' ? 'B' : 'W') + piece[1];
+         }
+         if(mirror !== '-'){
+           mirror = (mirror[0] === 'W' ? 'B' : 'W') + mirror[1];
+         }
+
+         flipped[x][y] = mirror;
+         flipped[7-x][y] = piece;
+       }
+     }
+ 
+     let str2 = flipped.flat(1).join('');
+     //this.printRows(flipped);
+     return [md5(str2)];
    }
 
    decodePosition(id){
