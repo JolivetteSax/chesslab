@@ -233,6 +233,29 @@ module.exports = class Chess {
      return md5(str);
    }
 
+   getWhiteBoardHash(){
+     // allows comparison of boards per player
+     let board = lo.cloneDeep(this.state.rows);
+
+     for(let x = 0; x< 8; x++){
+       for(let y = 0; y<8; y++){
+         let piece = board[x][y];
+
+         if(piece !== '-'){
+           if(piece[0] === 'B'){
+             piece = '-'
+           }
+         }
+
+       }
+     }
+     return md5(board.flat(1).join(''));
+   }
+
+   getBlackBoardHash(){
+     //TODO flip/mirror board to white
+   }
+
    getAltHashes(){
      let flipped = lo.cloneDeep(this.state.rows);
 

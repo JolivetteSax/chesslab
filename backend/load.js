@@ -39,6 +39,7 @@ states = {};
 boards = {};
 meta = {};
 alts = {};
+players = {};
 game_loop: for(let obj of games){
   let chess = new Chess();
   // the parser kicks it out as an array
@@ -49,6 +50,8 @@ game_loop: for(let obj of games){
   //console.log('************************');
   //console.log('Game# ' + count);
   //console.log(headers);
+  let whitePlayer = "white";
+  let blackPlayer = "black";
 
   let info = `Match ${count}.`;
   for(const header of headers){
@@ -56,6 +59,12 @@ game_loop: for(let obj of games){
       info += ' ' + header.value;
     }
     else if(header.name === 'White' || header.name === 'Black'){
+      if(header.name === 'White'){
+        whitePlayer = header.value;
+      }
+      else if(header.name === "Black"){
+        blackPlayer = header.value;
+      }
       info += ' ' + header.value;
     }
   }
@@ -78,8 +87,9 @@ game_loop: for(let obj of games){
       chess.printBoard();
       continue game_loop;
     }
-    if(number > 10){
+    if(number > 15){
       hash = chess.getStateHash();
+      weight = number * number;
       // ignore matches within the same game...
       if(currentHashes.hasOwnProperty(hash)){
         continue move_loop;
@@ -88,13 +98,15 @@ game_loop: for(let obj of games){
         currentHashes[hash] = true;
       }
       if(states.hasOwnProperty(hash)){
-        states[hash]++;
+        states[hash]++; // plus the move_number to weight it?
         meta[hash].push(info);
+        players[hash].push({white: whitePlayer, black:blackPlayer, weight});
       }
       else {
         states[hash] = 0;
         boards[hash] = chess.getBoardString();
         meta[hash] = [info];
+        players[hash] = [{white: whitePlayer, black:blackPlayer, weight}];
       }
       let hashes = chess.getAltHashes();
       let mirrorPrimaries = {}; // if it matches in order, it'll match later mirrors
@@ -129,8 +141,11 @@ for(const hash in states){
   if(count > 0){
     listing.push({hash, count});
   }
+  else{
+    delete players[hash];
+  }
 }
-
+/*
 listing = listing.sort((a, b) => {
   if(a.count === b.count) 
     return 0;
@@ -147,3 +162,39 @@ for(const pair of listing){
   console.log(board);
   console.log(infoList);
 }
+*/
+
+let nodes = [];
+let edges = [];
+let names = {};
+let max = 0;
+
+//TODO: flipping and mirroring from alts
+for(const hash in players){
+  let listing = players[hash];
+  for(const source of listing){
+    max = source.weight > max ? source.weight : max;
+    names[source.white] = true;
+    names[source.black] = true;
+    for(const target of listing){
+      // maybe using a traditional indexed loop, allowing for 1-node edges?
+      if(source.white !== target.white){
+        edges.push({source: source.white, target: target.white, weight: source.weight});
+      }
+      if(source.black !== target.black){
+        edges.push({source: source.black, target: target.black, weight: source.weight});
+      }
+    }
+  }
+}
+console.log('{"nodes": [');
+for(const name of Object.keys(names)){
+  console.log('{"data": { "id": "%s", "name": "%s"}},', name, name);
+}
+console.log('],');
+console.log('"edges": [');
+for(const edge of edges){
+  let weight = edge.weight / max;
+  console.log('{"data": { "source": "%s", "target": "%s", "weight": %f}},', edge.source, edge.target, weight);
+}
+console.log(']}');
