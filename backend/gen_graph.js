@@ -39,6 +39,7 @@ states = {};
 boards = {};
 meta = {};
 alts = {};
+players = {};
 game_loop: for(let obj of games){
   let chess = new Chess();
   // the parser kicks it out as an array
@@ -99,11 +100,13 @@ game_loop: for(let obj of games){
       if(states.hasOwnProperty(hash)){
         states[hash]++; // plus the move_number to weight it?
         meta[hash].push(info);
+        players[hash].push({white: whitePlayer, black:blackPlayer, weight});
       }
       else {
         states[hash] = 0;
         boards[hash] = chess.getBoardString();
         meta[hash] = [info];
+        players[hash] = [{white: whitePlayer, black:blackPlayer, weight}];
       }
       let hashes = chess.getAltHashes();
       let mirrorPrimaries = {}; // if it matches in order, it'll match later mirrors
@@ -138,8 +141,11 @@ for(const hash in states){
   if(count > 0){
     listing.push({hash, count});
   }
+  else{
+    delete players[hash];
+  }
 }
-
+/*
 listing = listing.sort((a, b) => {
   if(a.count === b.count) 
     return 0;
@@ -156,4 +162,40 @@ for(const pair of listing){
   console.log(board);
   console.log(infoList);
 }
+*/
 
+let nodes = [];
+let edges = [];
+let names = {};
+let max = 0;
+
+//TODO: flipping and mirroring from alts
+for(const hash in players){
+  let listing = players[hash];
+  for(const source of listing){
+    max = source.weight > max ? source.weight : max;
+    names[source.white] = true;
+    names[source.black] = true;
+    for(const target of listing){
+      // maybe using a traditional indexed loop, allowing for 1-node edges?
+      if(source.white !== target.white){
+        edges.push({source: source.white, target: target.white, weight: source.weight});
+      }
+      if(source.black !== target.black){
+        edges.push({source: source.black, target: target.black, weight: source.weight});
+      }
+    }
+  }
+}
+console.log("Max: " + max);
+console.log('{"nodes": [');
+for(const name of Object.keys(names)){
+  console.log('{"data": { "id": "%s", "name": "%s"}},', name, name);
+}
+console.log('],');
+console.log('"edges": [');
+for(const edge of edges){
+  let weight = edge.weight / max;
+  console.log('{"data": { "source": "%s", "target": "%s", "weight": %f}},', edge.source, edge.target, weight);
+}
+console.log(']}');
