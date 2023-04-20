@@ -246,14 +246,30 @@ module.exports = class Chess {
              piece = '-'
            }
          }
-
+         board[x][y] = piece;
        }
      }
      return md5(board.flat(1).join(''));
    }
 
    getBlackBoardHash(){
-     //TODO flip/mirror board to white
+     //TODO flip & mirror board to white? Not sure
+      let board = lo.cloneDeep(this.state.rows);
+
+     for(let x = 0; x< 8; x++){
+       for(let y = 0; y<8; y++){
+         let piece = board[x][y];
+
+         if(piece !== '-'){
+           if(piece[0] === 'W'){
+             piece = '-'
+           }
+         }
+         board[x][y] = piece;
+       }
+     }
+     return md5(board.flat(1).join(''));
+    
    }
 
    getAltHashes(){

@@ -108,7 +108,13 @@ game_loop: for(let obj of games){
         meta[hash] = [info];
         players[hash] = [{white: whitePlayer, black:blackPlayer, weight}];
       }
+
+
+      // TODO XXX - needs to not run concurrently, or misordered matches are missed.
       let hashes = chess.getAltHashes();
+      hashes.push(chess.getBlackBoardHash());
+      hashes.push(chess.getWhiteBoardHash());
+
       let mirrorPrimaries = {}; // if it matches in order, it'll match later mirrors
       alt_loop: for(const altHash of hashes){
         if(alts.hasOwnProperty(altHash)){
@@ -123,7 +129,9 @@ game_loop: for(let obj of games){
           }
           //console.log('Alt match %s -> %s', altHash, primary);
           states[primary]++;
-          meta[primary].push(info+' (Mirrored)');
+          players[primary].push({white: whitePlayer, black:blackPlayer, weight});
+          meta[primary].push(info);
+          //console.log("AltMatch");
         }
         else{
           alts[altHash] = hash;
@@ -177,7 +185,7 @@ for(const hash in players){
     names[source.white] = true;
     names[source.black] = true;
     for(const target of listing){
-      // maybe using a traditional indexed loop, allowing for 1-node edges?
+      // another analysis would only look at matches, to see repetative players
       if(source.white !== target.white){
         edges.push({source: source.white, target: target.white, weight: source.weight});
       }
@@ -187,7 +195,6 @@ for(const hash in players){
     }
   }
 }
-console.log("Max: " + max);
 console.log('{"nodes": [');
 for(const name of Object.keys(names)){
   console.log('{"data": { "id": "%s", "name": "%s"}},', name, name);
